@@ -4,6 +4,8 @@ import { db } from '../../db/database';
 import { startTimer, stopTimer, createTimeEntry, updateTimeEntry } from '../../db/timeEntryRepository';
 import { updateJob } from '../../db/jobRepository';
 import { CURRENT_USER_ID } from '../currentUser';
+import { formatDate } from '../../lib/date';
+import { gstAmount, incGstAmount } from '../../lib/gst';
 import type { TimeEntry } from '../../models/TimeEntry';
 import type { Job } from '../../models/Job';
 
@@ -25,7 +27,7 @@ function TimeEntryRow({ entry }: { entry: TimeEntry }) {
 
   return (
     <li>
-      {entry.start_time.slice(0, 10)} — {((entry.duration_minutes ?? 0) / 60).toFixed(2)} hrs
+      {formatDate(entry.start_time)} — {((entry.duration_minutes ?? 0) / 60).toFixed(2)} hrs
       {!entry.billable && ' (non-billable)'} — <em>{entry.source}</em>
       <br />
       <input
@@ -170,7 +172,11 @@ export function TimePanel({ job }: { job: Job }) {
           {earnings !== null && (
             <>
               {' — '}
-              <strong>Billable: ${earnings.toFixed(2)}</strong>
+              <strong>Billable (ex GST): ${earnings.toFixed(2)}</strong>
+              {' — '}
+              GST: ${gstAmount(earnings).toFixed(2)}
+              {' — '}
+              <strong>Total (inc GST): ${incGstAmount(earnings).toFixed(2)}</strong>
             </>
           )}
         </p>

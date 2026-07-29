@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/database';
 import { createPhoto, deletePhoto } from '../../db/photoRepository';
+import { formatDate } from '../../lib/date';
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -63,7 +64,7 @@ export function PhotosPanel({ jobId }: { jobId: string }) {
           <figure key={photo.id} style={{ display: 'inline-block', margin: '8px', width: '150px' }}>
             <img src={photo.image_url} alt={photo.caption || 'Job photo'} style={{ width: '100%' }} />
             <figcaption>
-              {photo.caption || photo.taken_at.slice(0, 10)}
+              {photo.caption || formatDate(photo.taken_at)}
               <button type="button" onClick={() => deletePhoto(photo.id)}>
                 Remove
               </button>

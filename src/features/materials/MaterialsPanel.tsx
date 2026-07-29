@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/database';
 import { createMaterialEntry } from '../../db/materialEntryRepository';
+import { gstAmount, incGstAmount } from '../../lib/gst';
 
 export function MaterialsPanel({ jobId }: { jobId: string }) {
   const entries = useLiveQuery(() => db.materialEntries.where('job_id').equals(jobId).toArray(), [jobId]);
@@ -86,7 +87,11 @@ export function MaterialsPanel({ jobId }: { jobId: string }) {
       </ul>
       {entries && entries.length > 0 && (
         <p>
-          <strong>Materials total: ${total.toFixed(2)}</strong>
+          <strong>Materials (ex GST): ${total.toFixed(2)}</strong>
+          {' — '}
+          GST: ${gstAmount(total).toFixed(2)}
+          {' — '}
+          <strong>Total (inc GST): ${incGstAmount(total).toFixed(2)}</strong>
         </p>
       )}
     </section>

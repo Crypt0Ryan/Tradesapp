@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/database';
 import { createTravelEntry } from '../../db/travelEntryRepository';
 import { CURRENT_USER_ID } from '../currentUser';
+import { formatDate } from '../../lib/date';
 
 export function TravelPanel({ jobId }: { jobId: string }) {
   const entries = useLiveQuery(() => db.travelEntries.where('job_id').equals(jobId).toArray(), [jobId]);
@@ -57,7 +58,7 @@ export function TravelPanel({ jobId }: { jobId: string }) {
       <ul>
         {entries?.map((entry) => (
           <li key={entry.id}>
-            {entry.date} — {entry.distance_km} km{entry.personal && ' (personal)'}
+            {formatDate(entry.date)} — {entry.distance_km} km{entry.personal && ' (personal)'}
           </li>
         ))}
         {entries?.length === 0 && <li>No trips logged yet.</li>}
