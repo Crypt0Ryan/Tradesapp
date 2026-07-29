@@ -1,12 +1,16 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Client } from '../models/Client';
 import type { Job } from '../models/Job';
+import type { MaterialEntry } from '../models/MaterialEntry';
 import type { TimeEntry } from '../models/TimeEntry';
+import type { TravelEntry } from '../models/TravelEntry';
 
 export class TradesAppDB extends Dexie {
   clients!: EntityTable<Client, 'id'>;
   jobs!: EntityTable<Job, 'id'>;
   timeEntries!: EntityTable<TimeEntry, 'id'>;
+  materialEntries!: EntityTable<MaterialEntry, 'id'>;
+  travelEntries!: EntityTable<TravelEntry, 'id'>;
 
   constructor() {
     super('TradesAppDB');
@@ -14,6 +18,8 @@ export class TradesAppDB extends Dexie {
       clients: 'id, user_id, name',
       jobs: 'id, client_id, status, start_date',
       timeEntries: 'id, job_id, user_id, start_time, end_time',
+      materialEntries: 'id, job_id, receipt_id',
+      travelEntries: 'id, job_id, user_id, date',
     });
   }
 }
