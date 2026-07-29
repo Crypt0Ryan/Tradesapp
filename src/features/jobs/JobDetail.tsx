@@ -1,11 +1,19 @@
+import { useState } from 'react';
 import type { Job } from '../../models/Job';
 import { JobSummary } from './JobSummary';
+import { InvoiceView } from './InvoiceView';
 import { TimePanel } from '../time/TimePanel';
 import { MaterialsPanel } from '../materials/MaterialsPanel';
 import { TravelPanel } from '../travel/TravelPanel';
 import { PhotosPanel } from '../photos/PhotosPanel';
 
 export function JobDetail({ job, clientName, onClose }: { job: Job; clientName: string; onClose: () => void }) {
+  const [showInvoice, setShowInvoice] = useState(false);
+
+  if (showInvoice) {
+    return <InvoiceView job={job} onClose={() => setShowInvoice(false)} />;
+  }
+
   return (
     <section>
       <h3>
@@ -13,6 +21,9 @@ export function JobDetail({ job, clientName, onClose }: { job: Job; clientName: 
       </h3>
       <button type="button" onClick={onClose}>
         Close
+      </button>
+      <button type="button" onClick={() => setShowInvoice(true)}>
+        View / Print Invoice
       </button>
 
       <JobSummary job={job} />

@@ -21,3 +21,16 @@ export function formatDate(isoDateOrDateTime: string): string {
   const year = date.getFullYear();
   return `${day}/${month}/${year}`;
 }
+
+/**
+ * Converts a full ISO timestamp to a "YYYY-MM-DD" value suitable for an
+ * HTML <input type="date">, using the viewer's local calendar date (same
+ * reasoning as formatDate - avoids the UTC-slice timezone bug).
+ */
+export function toDateInputValue(isoDateTime: string): string {
+  const date = new Date(isoDateTime);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}

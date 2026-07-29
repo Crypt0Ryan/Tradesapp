@@ -1,9 +1,65 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/database';
-import { createTravelEntry } from '../../db/travelEntryRepository';
+import { createTravelEntry, updateTravelEntry, deleteTravelEntry } from '../../db/travelEntryRepository';
 import { CURRENT_USER_ID } from '../currentUser';
 import { formatDate } from '../../lib/date';
+import type { TravelEntry } from '../../models/TravelEntry';
+
+function TravelEntryRow({ entry }: { entry: TravelEntry }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [date, setDate] = useState(entry.date);
+  const [distanceKm, setDistanceKm] = useState(String(entry.distance_km));
+  const [personal, setPersonal] = useState(entry.personal);
+
+  function startEdit() {
+    setDate(entry.date);
+    setDistanceKm(String(entry.distance_km));
+    setPersonal(entry.personal);
+    setIsEditing(true);
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    await updateTravelEntry(entry.id, { date, distance_km: Number(distanceKm) || 0, personal });
+    setIsEditing(false);
+  }
+
+  async function handleDelete() {
+    await deleteTravelEntry(entry.id);
+  }
+
+  if (isEditing) {
+    return (
+      <li>
+        <form onSubmit={handleSave}>
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <input type="number" min="0" step="any" value={distanceKm} onChange={(e) => setDistanceKm(e.target.value)} />
+          <label>
+            <input type="checkbox" checked={personal} onChange={(e) => setPersonal(e.target.checked)} />
+            Personal
+          </label>
+          <button type="submit">Save</button>
+          <button type="button" onClick={() => setIsEditing(false)}>
+            Cancel
+          </button>
+        </form>
+      </li>
+    );
+  }
+
+  return (
+    <li>
+      {formatDate(entry.date)} — {entry.distance_km} km{entry.personal && ' (personal)'}{' '}
+      <button type="button" onClick={startEdit}>
+        Edit
+      </button>
+      <button type="button" onClick={handleDelete}>
+        Delete
+      </button>
+    </li>
+  );
+}
 
 export function TravelPanel({ jobId }: { jobId: string }) {
   const entries = useLiveQuery(() => db.travelEntries.where('job_id').equals(jobId).toArray(), [jobId]);
@@ -57,9 +113,7 @@ export function TravelPanel({ jobId }: { jobId: string }) {
 
       <ul>
         {entries?.map((entry) => (
-          <li key={entry.id}>
-            {formatDate(entry.date)} — {entry.distance_km} km{entry.personal && ' (personal)'}
-          </li>
+          <TravelEntryRow key={entry.id} entry={entry} />
         ))}
         {entries?.length === 0 && <li>No trips logged yet.</li>}
       </ul>

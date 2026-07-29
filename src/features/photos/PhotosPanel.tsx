@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/database';
-import { createPhoto, deletePhoto } from '../../db/photoRepository';
+import { createPhoto, updatePhotoCaption, deletePhoto } from '../../db/photoRepository';
 import { formatDate } from '../../lib/date';
+import type { Photo } from '../../models/Photo';
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -11,6 +12,34 @@ function readFileAsDataUrl(file: File): Promise<string> {
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(file);
   });
+}
+
+function PhotoCard({ photo }: { photo: Photo }) {
+  const [caption, setCaption] = useState(photo.caption);
+
+  async function commitCaption() {
+    if (caption !== photo.caption) await updatePhotoCaption(photo.id, caption);
+  }
+
+  return (
+    <figure style={{ display: 'inline-block', margin: '8px', width: '150px' }}>
+      <img src={photo.image_url} alt={photo.caption || 'Job photo'} style={{ width: '100%' }} />
+      <figcaption>
+        {formatDate(photo.taken_at)}
+        <br />
+        <input
+          type="text"
+          placeholder="Caption (e.g. before, after)"
+          value={caption}
+          onChange={(e) => setCaption(e.target.value)}
+          onBlur={commitCaption}
+        />
+        <button type="button" onClick={() => deletePhoto(photo.id)}>
+          Remove
+        </button>
+      </figcaption>
+    </figure>
+  );
 }
 
 export function PhotosPanel({ jobId }: { jobId: string }) {
@@ -61,15 +90,7 @@ export function PhotosPanel({ jobId }: { jobId: string }) {
 
       <div>
         {photos?.map((photo) => (
-          <figure key={photo.id} style={{ display: 'inline-block', margin: '8px', width: '150px' }}>
-            <img src={photo.image_url} alt={photo.caption || 'Job photo'} style={{ width: '100%' }} />
-            <figcaption>
-              {photo.caption || formatDate(photo.taken_at)}
-              <button type="button" onClick={() => deletePhoto(photo.id)}>
-                Remove
-              </button>
-            </figcaption>
-          </figure>
+          <PhotoCard key={photo.id} photo={photo} />
         ))}
         {photos?.length === 0 && <p>No photos yet.</p>}
       </div>

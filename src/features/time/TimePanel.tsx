@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/database';
-import { startTimer, stopTimer, createTimeEntry, updateTimeEntry } from '../../db/timeEntryRepository';
+import { startTimer, stopTimer, createTimeEntry, updateTimeEntry, deleteTimeEntry } from '../../db/timeEntryRepository';
 import { updateJob } from '../../db/jobRepository';
 import { CURRENT_USER_ID } from '../currentUser';
-import { formatDate } from '../../lib/date';
+import { formatDate, toDateInputValue } from '../../lib/date';
 import { gstAmount, incGstAmount } from '../../lib/gst';
 import type { TimeEntry } from '../../models/TimeEntry';
 import type { Job } from '../../models/Job';
@@ -18,17 +18,71 @@ function formatElapsed(startTime: string, nowMs: number) {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
+/** Rebuilds start_time/end_time/duration_minutes from a date + hours pair, same math used at creation. */
+function recomputeTimes(dateValue: string, hoursValue: number) {
+  const durationMinutes = Math.round(hoursValue * 60);
+  const start = new Date(`${dateValue}T00:00:00`);
+  const end = new Date(start.getTime() + durationMinutes * 60000);
+  return { start_time: start.toISOString(), end_time: end.toISOString(), duration_minutes: durationMinutes };
+}
+
 function TimeEntryRow({ entry }: { entry: TimeEntry }) {
   const [notes, setNotes] = useState(entry.notes);
+  const [isEditing, setIsEditing] = useState(false);
+  const [date, setDate] = useState(toDateInputValue(entry.start_time));
+  const [hours, setHours] = useState(String((entry.duration_minutes ?? 0) / 60));
+  const [billable, setBillable] = useState(entry.billable);
 
   async function commitNotes() {
     if (notes !== entry.notes) await updateTimeEntry(entry.id, { notes });
   }
 
+  function startEdit() {
+    setDate(toDateInputValue(entry.start_time));
+    setHours(String((entry.duration_minutes ?? 0) / 60));
+    setBillable(entry.billable);
+    setIsEditing(true);
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    await updateTimeEntry(entry.id, { ...recomputeTimes(date, Number(hours) || 0), billable });
+    setIsEditing(false);
+  }
+
+  async function handleDelete() {
+    await deleteTimeEntry(entry.id);
+  }
+
+  if (isEditing) {
+    return (
+      <li>
+        <form onSubmit={handleSave}>
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <input type="number" min="0" step="any" value={hours} onChange={(e) => setHours(e.target.value)} />
+          <label>
+            <input type="checkbox" checked={billable} onChange={(e) => setBillable(e.target.checked)} />
+            Billable
+          </label>
+          <button type="submit">Save</button>
+          <button type="button" onClick={() => setIsEditing(false)}>
+            Cancel
+          </button>
+        </form>
+      </li>
+    );
+  }
+
   return (
     <li>
       {formatDate(entry.start_time)} — {((entry.duration_minutes ?? 0) / 60).toFixed(2)} hrs
-      {!entry.billable && ' (non-billable)'} — <em>{entry.source}</em>
+      {!entry.billable && ' (non-billable)'} — <em>{entry.source}</em>{' '}
+      <button type="button" onClick={startEdit}>
+        Edit
+      </button>
+      <button type="button" onClick={handleDelete}>
+        Delete
+      </button>
       <br />
       <input
         type="text"
@@ -81,16 +135,10 @@ export function TimePanel({ job }: { job: Job }) {
     const hoursNum = Number(hours);
     if (!hoursNum) return;
 
-    const durationMinutes = Math.round(hoursNum * 60);
-    const start = new Date(`${date}T00:00:00`);
-    const end = new Date(start.getTime() + durationMinutes * 60000);
-
     await createTimeEntry({
       job_id: jobId,
       user_id: CURRENT_USER_ID,
-      start_time: start.toISOString(),
-      end_time: end.toISOString(),
-      duration_minutes: durationMinutes,
+      ...recomputeTimes(date, hoursNum),
       billable,
       source: 'manual',
       notes: notes.trim(),
