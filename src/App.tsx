@@ -1,8 +1,12 @@
+import { ClientsPanel } from './features/clients/ClientsPanel';
+import { JobsPanel } from './features/jobs/JobsPanel';
+
 function App() {
   return (
     <main>
       <h1>Tradesapp</h1>
-      <p>Work logging for tradespeople — scaffolding in progress.</p>
+      <ClientsPanel />
+      <JobsPanel />
     </main>
   )
 }
