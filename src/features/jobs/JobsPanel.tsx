@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/database';
 import { createJob } from '../../db/jobRepository';
+import { JobDetail } from './JobDetail';
 
 export function JobsPanel() {
   const clients = useLiveQuery(() => db.clients.toArray(), []);
@@ -9,6 +10,7 @@ export function JobsPanel() {
 
   const [title, setTitle] = useState('');
   const [clientId, setClientId] = useState('');
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -31,6 +33,7 @@ export function JobsPanel() {
   }
 
   const hasClients = (clients?.length ?? 0) > 0;
+  const selectedJob = jobs?.find((job) => job.id === selectedJobId) ?? null;
 
   return (
     <section>
@@ -61,11 +64,21 @@ export function JobsPanel() {
       <ul>
         {jobs?.map((job) => (
           <li key={job.id}>
-            {job.title} — {clientName(job.client_id)} — <em>{job.status}</em>
+            <button type="button" onClick={() => setSelectedJobId(job.id)}>
+              {job.title} — {clientName(job.client_id)} — <em>{job.status}</em>
+            </button>
           </li>
         ))}
         {jobs?.length === 0 && <li>No jobs yet.</li>}
       </ul>
+
+      {selectedJob && (
+        <JobDetail
+          job={selectedJob}
+          clientName={clientName(selectedJob.client_id)}
+          onClose={() => setSelectedJobId(null)}
+        />
+      )}
     </section>
   );
 }
