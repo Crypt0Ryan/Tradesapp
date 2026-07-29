@@ -84,9 +84,9 @@ function TimeEntryRow({ entry }: { entry: TimeEntry }) {
         Delete
       </button>
       <br />
-      <input
-        type="text"
-        placeholder="What did you do? (e.g. installed toilet plumbing)"
+      <textarea
+        rows={3}
+        placeholder="What did you do? (e.g. plumbed toilet, then press Enter for the next item)"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         onBlur={commitNotes}
@@ -193,9 +193,9 @@ export function TimePanel({ job }: { job: Job }) {
           value={hours}
           onChange={(e) => setHours(e.target.value)}
         />
-        <input
-          type="text"
-          placeholder="What did you do? (e.g. installed toilet plumbing)"
+        <textarea
+          rows={3}
+          placeholder="What did you do? (e.g. plumbed toilet, then press Enter for the next item)"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
