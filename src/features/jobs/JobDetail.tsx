@@ -1,4 +1,6 @@
 import type { Job } from '../../models/Job';
+import { JobSummary } from './JobSummary';
+import { TimePanel } from '../time/TimePanel';
 import { MaterialsPanel } from '../materials/MaterialsPanel';
 import { TravelPanel } from '../travel/TravelPanel';
 
@@ -12,6 +14,8 @@ export function JobDetail({ job, clientName, onClose }: { job: Job; clientName: 
         Close
       </button>
 
+      <JobSummary jobId={job.id} />
+      <TimePanel jobId={job.id} />
       <MaterialsPanel jobId={job.id} />
       <TravelPanel jobId={job.id} />
     </section>
