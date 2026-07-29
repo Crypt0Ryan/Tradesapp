@@ -6,6 +6,7 @@ export interface Job {
   title: string;
   status: JobStatus;
   quoted_amount: number | null;
+  hourly_rate: number | null;
   start_date: string;
   notes: string;
   created_at: string;

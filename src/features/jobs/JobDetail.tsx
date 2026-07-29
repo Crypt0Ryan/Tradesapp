@@ -15,8 +15,8 @@ export function JobDetail({ job, clientName, onClose }: { job: Job; clientName: 
         Close
       </button>
 
-      <JobSummary jobId={job.id} />
-      <TimePanel jobId={job.id} />
+      <JobSummary job={job} />
+      <TimePanel job={job} />
       <MaterialsPanel jobId={job.id} />
       <TravelPanel jobId={job.id} />
       <PhotosPanel jobId={job.id} />

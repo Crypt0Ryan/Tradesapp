@@ -21,6 +21,7 @@ export function JobsPanel() {
       title: title.trim(),
       status: 'quoted',
       quoted_amount: null,
+      hourly_rate: null,
       start_date: new Date().toISOString().slice(0, 10),
       notes: '',
     });
