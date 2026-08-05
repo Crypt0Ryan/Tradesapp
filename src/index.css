@@ -110,6 +110,43 @@ code {
   background: var(--code-bg);
 }
 
+header {
+  text-align: center;
+}
+
+.app-layout {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  text-align: left;
+  min-height: 0;
+}
+
+.app-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  padding: 0 16px;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 0 24px;
+}
+
+.app-sidebar ul,
+.app-sidebar li {
+  list-style: none;
+  padding-left: 0;
+}
+
+.app-sidebar li li {
+  padding-left: 16px;
+}
+
 /* Print only the invoice: hide everything else on the page, then pull the
    invoice out of wherever it's nested and pin it to the page origin so
    scroll position / nesting don't affect the printed layout. */

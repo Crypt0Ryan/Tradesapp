@@ -29,6 +29,18 @@ export async function updateJob(id: string, changes: Partial<Omit<Job, 'id' | 'c
   await db.jobs.update(id, { ...changes, updated_at: new Date().toISOString() });
 }
 
+/** Deletes a job and everything logged against it - otherwise those records would be orphaned garbage, unreachable from any screen. */
 export function deleteJob(id: string): Promise<void> {
-  return db.jobs.delete(id);
+  return db.transaction(
+    'rw',
+    [db.jobs, db.timeEntries, db.materialEntries, db.travelEntries, db.photos, db.voiceNotes],
+    async () => {
+      await db.timeEntries.where('job_id').equals(id).delete();
+      await db.materialEntries.where('job_id').equals(id).delete();
+      await db.travelEntries.where('job_id').equals(id).delete();
+      await db.photos.where('job_id').equals(id).delete();
+      await db.voiceNotes.where('job_id').equals(id).delete();
+      await db.jobs.delete(id);
+    },
+  );
 }

@@ -1,15 +1,24 @@
-import { ClientsPanel } from './features/clients/ClientsPanel';
-import { JobsPanel } from './features/jobs/JobsPanel';
-import { VoiceInboxPanel } from './features/voice/VoiceInboxPanel';
+import { useState } from 'react';
+import { Sidebar } from './features/sidebar/Sidebar';
+import { MainArea } from './features/jobs/MainArea';
 
 function App() {
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+
   return (
-    <main>
-      <h1>Tradesapp</h1>
-      <ClientsPanel />
-      <JobsPanel />
-      <VoiceInboxPanel />
-    </main>
+    <>
+      <header>
+        <h1>Tradesapp</h1>
+      </header>
+      <div className="app-layout">
+        <aside className="app-sidebar">
+          <Sidebar selectedJobId={selectedJobId} onSelectJob={setSelectedJobId} />
+        </aside>
+        <main className="app-main">
+          <MainArea selectedJobId={selectedJobId} onCloseJob={() => setSelectedJobId(null)} />
+        </main>
+      </div>
+    </>
   )
 }
 

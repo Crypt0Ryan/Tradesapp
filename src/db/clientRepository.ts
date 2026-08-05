@@ -19,6 +19,11 @@ export async function updateClient(id: string, changes: Partial<Omit<Client, 'id
   await db.clients.update(id, changes);
 }
 
-export function deleteClient(id: string): Promise<void> {
-  return db.clients.delete(id);
+/** Refuses to delete a client that still has jobs - avoids orphaning jobs whose client_id points nowhere. */
+export async function deleteClient(id: string): Promise<void> {
+  const jobCount = await db.jobs.where('client_id').equals(id).count();
+  if (jobCount > 0) {
+    throw new Error(`Cannot delete this client - they still have ${jobCount} job(s). Delete those first.`);
+  }
+  await db.clients.delete(id);
 }
