@@ -3,13 +3,13 @@
 ## Phase 1 — MVP
 Goal: a genuinely usable tool you can put in your own hands in the field ASAP.
 
-- [~] Client & Job management (basic CRUD) — **create + list done for both; no edit or delete UI for either.** Repository functions exist (`updateClient`, `updateJob`, `deleteJob` etc.) but nothing in the UI calls most of them. Fat-fingered a client's phone number or job title? No way to fix it yet.
-- [~] Job status tracking (quoted / active / paused / complete / invoiced) — statuses exist in the data model and display next to each job, but **every job is created as "quoted" and there is no way to ever change it.** No job can currently be marked active, complete, or invoiced.
+- [x] Client & Job management (basic CRUD) — create, edit (inline, in the sidebar), and delete now all work for both. Deleting a client with jobs is blocked with a clear error; deleting a job cascades to everything logged against it.
+- [x] Job status tracking (quoted / active / paused / complete / invoiced) — changeable via a dropdown in the job detail view; previously every job was stuck at "quoted" forever.
 - [x] Time tracking: manual start/stop timer + manual time entry fallback
 - [x] Materials: manual line-item entry per job (name, qty, unit cost)
 - [x] KM/travel tracking: manual entry (odometer or straight km per job)
 - [x] Photo attachment per job (before/after — no OCR yet)
-- [~] Offline support: local-first storage with sync when back online — **data layer (IndexedDB) is fully offline-capable; "sync when back online" doesn't exist because there's no backend at all (by design, kept free/cost-free).** Separately: this is a plain web app, not yet an installable PWA — no manifest or service worker, so the app shell itself needs a live connection to `npm run dev` (or a real host) to load at all. Worth fixing before relying on this in a true no-signal job site.
+- [x] Offline support: local-first storage with sync when back online — data layer (IndexedDB) offline-capable from the start; **the app shell is now also a real installable PWA** (manifest + service worker precaching), verified to load with zero network connectivity, not just the data. "Sync when back online" still doesn't exist because there's no backend at all (by design, kept free/cost-free) — single-device only for now.
 - [x] Basic per-job summary view: total hours, materials cost, km — done, and went further than scoped (adds Labour $ and full GST breakdown too)
 
 ## Phase 2 — Differentiators
@@ -26,7 +26,7 @@ Goal: retention, teams, and integration into existing tradie workflows.
 
 - [ ] Accounting integration (Xero / QuickBooks / MYOB)
 - [ ] Multi-user/team support (subcontractor or apprentice logging against owner's jobs, with permissions)
-- [ ] Job profitability report (quoted vs actual: labour + materials + travel) — **blocked on the "quoted_amount" gap above**: the field exists on the Job model but is never collected or shown anywhere, so there's no "quoted" side to compare against yet
+- [ ] Job profitability report (quoted vs actual: labour + materials + travel) — no longer blocked: `quoted_amount` is now collected when a job is created and shown in its header. The comparison report itself (quoted vs. actual side by side) still isn't built.
 - [ ] Client-facing shareable progress link (read-only job status/hours, no full app access)
 - [ ] End-of-day reminder notifications ("you haven't logged hours today")
 - [ ] Weather auto-log per job/day (useful for delay disputes)
