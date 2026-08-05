@@ -8,7 +8,9 @@ function App() {
   return (
     <>
       <header>
-        <h1>Tradesapp</h1>
+        <h1>
+          <img src="/logo.png" alt="Tradesapp" className="app-logo" />
+        </h1>
       </header>
       <div className="app-layout">
         <aside className="app-sidebar">
