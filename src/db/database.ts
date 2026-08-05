@@ -5,6 +5,7 @@ import type { MaterialEntry } from '../models/MaterialEntry';
 import type { Photo } from '../models/Photo';
 import type { TimeEntry } from '../models/TimeEntry';
 import type { TravelEntry } from '../models/TravelEntry';
+import type { VoiceNote } from '../models/VoiceNote';
 
 export class TradesAppDB extends Dexie {
   clients!: EntityTable<Client, 'id'>;
@@ -13,6 +14,7 @@ export class TradesAppDB extends Dexie {
   materialEntries!: EntityTable<MaterialEntry, 'id'>;
   travelEntries!: EntityTable<TravelEntry, 'id'>;
   photos!: EntityTable<Photo, 'id'>;
+  voiceNotes!: EntityTable<VoiceNote, 'id'>;
 
   constructor() {
     super('TradesAppDB');
@@ -23,6 +25,7 @@ export class TradesAppDB extends Dexie {
       materialEntries: 'id, job_id, receipt_id',
       travelEntries: 'id, job_id, user_id, date',
       photos: 'id, job_id, taken_at',
+      voiceNotes: 'id, job_id, status, created_at',
     });
   }
 }

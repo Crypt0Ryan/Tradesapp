@@ -1,0 +1,131 @@
+import { useRef, useState } from 'react';
+import { createVoiceNote } from '../../db/voiceNoteRepository';
+
+function getSpeechRecognitionCtor(): (new () => SpeechRecognition) | undefined {
+  return window.SpeechRecognition ?? window.webkitSpeechRecognition;
+}
+
+export const isTranscriptionSupported = typeof window !== 'undefined' && !!getSpeechRecognitionCtor();
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+export function VoiceRecorder({ jobId }: { jobId: string | null }) {
+  const [isRecording, setIsRecording] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  async function handleStart() {
+    setError(null);
+    setTranscript('');
+    chunksRef.current = [];
+
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setError('Could not access the microphone - check permissions and try again.');
+      return;
+    }
+    streamRef.current = stream;
+
+    const recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunksRef.current.push(e.data);
+    };
+    mediaRecorderRef.current = recorder;
+    recorder.start();
+
+    const SpeechRecognitionCtor = getSpeechRecognitionCtor();
+    if (SpeechRecognitionCtor) {
+      const recognition = new SpeechRecognitionCtor();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.onresult = (event) => {
+        let combined = '';
+        for (let i = 0; i < event.results.length; i++) {
+          combined += event.results[i][0].transcript;
+        }
+        setTranscript(combined);
+      };
+      recognition.onerror = () => {
+        // Transcription is a best-effort bonus - failures here must never block the audio save.
+      };
+      recognitionRef.current = recognition;
+      try {
+        recognition.start();
+      } catch {
+        // Some browsers throw if recognition is already running; audio recording is unaffected.
+      }
+    }
+
+    setIsRecording(true);
+  }
+
+  async function handleStop() {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) return;
+
+    setIsRecording(false);
+    setIsSaving(true);
+
+    recognitionRef.current?.stop();
+
+    const blob = await new Promise<Blob>((resolve) => {
+      recorder.onstop = () => resolve(new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' }));
+      recorder.stop();
+    });
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+
+    const audioUrl = await blobToDataUrl(blob);
+
+    await createVoiceNote({
+      job_id: jobId,
+      audio_url: audioUrl,
+      raw_transcript: transcript.trim() || null,
+      parsed_result: null,
+      status: 'pending_review',
+      created_at: new Date().toISOString(),
+    });
+
+    setIsSaving(false);
+    setTranscript('');
+  }
+
+  return (
+    <div>
+      {isRecording ? (
+        <button type="button" onClick={handleStop}>
+          Stop recording
+        </button>
+      ) : (
+        <button type="button" onClick={handleStart} disabled={isSaving}>
+          {isSaving ? 'Saving…' : '🎙 Record voice note'}
+        </button>
+      )}
+      {isRecording && (
+        <p>
+          Recording…{' '}
+          {isTranscriptionSupported ? (
+            <em>{transcript || 'listening…'}</em>
+          ) : (
+            <em>(live transcription not supported in this browser - audio will still be saved)</em>
+          )}
+        </p>
+      )}
+      {error && <p role="alert">{error}</p>}
+    </div>
+  );
+}

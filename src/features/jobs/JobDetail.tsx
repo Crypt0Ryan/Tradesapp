@@ -6,6 +6,7 @@ import { TimePanel } from '../time/TimePanel';
 import { MaterialsPanel } from '../materials/MaterialsPanel';
 import { TravelPanel } from '../travel/TravelPanel';
 import { PhotosPanel } from '../photos/PhotosPanel';
+import { VoiceNotesPanel } from '../voice/VoiceNotesPanel';
 
 export function JobDetail({ job, clientName, onClose }: { job: Job; clientName: string; onClose: () => void }) {
   const [showInvoice, setShowInvoice] = useState(false);
@@ -31,6 +32,7 @@ export function JobDetail({ job, clientName, onClose }: { job: Job; clientName: 
       <MaterialsPanel jobId={job.id} />
       <TravelPanel jobId={job.id} />
       <PhotosPanel jobId={job.id} />
+      <VoiceNotesPanel jobId={job.id} />
     </section>
   );
 }
