@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/database';
 import { JobDetail } from './JobDetail';
 import { VoiceInboxPanel } from '../voice/VoiceInboxPanel';
+import { ReceiptInboxPanel } from '../receipts/ReceiptInboxPanel';
 
 export function MainArea({
   selectedJobId,
@@ -14,7 +15,12 @@ export function MainArea({
   const client = useLiveQuery(() => (job ? db.clients.get(job.client_id) : undefined), [job]);
 
   if (!selectedJobId) {
-    return <VoiceInboxPanel />;
+    return (
+      <>
+        <VoiceInboxPanel />
+        <ReceiptInboxPanel />
+      </>
+    );
   }
 
   if (!job) {

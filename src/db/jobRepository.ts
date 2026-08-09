@@ -33,13 +33,14 @@ export async function updateJob(id: string, changes: Partial<Omit<Job, 'id' | 'c
 export function deleteJob(id: string): Promise<void> {
   return db.transaction(
     'rw',
-    [db.jobs, db.timeEntries, db.materialEntries, db.travelEntries, db.photos, db.voiceNotes],
+    [db.jobs, db.timeEntries, db.materialEntries, db.travelEntries, db.photos, db.voiceNotes, db.receipts],
     async () => {
       await db.timeEntries.where('job_id').equals(id).delete();
       await db.materialEntries.where('job_id').equals(id).delete();
       await db.travelEntries.where('job_id').equals(id).delete();
       await db.photos.where('job_id').equals(id).delete();
       await db.voiceNotes.where('job_id').equals(id).delete();
+      await db.receipts.where('job_id').equals(id).delete();
       await db.jobs.delete(id);
     },
   );
