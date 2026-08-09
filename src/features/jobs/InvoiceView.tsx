@@ -1,60 +1,10 @@
-import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/database';
 import { gstAmount, incGstAmount } from '../../lib/gst';
 import { materialLineTotal } from '../../lib/materials';
 import { formatDate } from '../../lib/date';
-import { getBusinessSettings, saveBusinessSettings } from '../../lib/businessSettings';
+import { BusinessDetailsHeader } from '../business/BusinessDetailsHeader';
 import type { Job } from '../../models/Job';
-
-function BusinessDetailsHeader() {
-  const [settings, setSettings] = useState(getBusinessSettings);
-  const [isEditing, setIsEditing] = useState(false);
-  const [businessName, setBusinessName] = useState(settings.businessName);
-  const [abn, setAbn] = useState(settings.abn);
-
-  function startEdit() {
-    setBusinessName(settings.businessName);
-    setAbn(settings.abn);
-    setIsEditing(true);
-  }
-
-  function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    const updated = { businessName: businessName.trim(), abn: abn.trim() };
-    saveBusinessSettings(updated);
-    setSettings(updated);
-    setIsEditing(false);
-  }
-
-  if (isEditing) {
-    return (
-      <form onSubmit={handleSave} className="no-print">
-        <input
-          type="text"
-          placeholder="Your business name"
-          value={businessName}
-          onChange={(e) => setBusinessName(e.target.value)}
-        />
-        <input type="text" placeholder="ABN" value={abn} onChange={(e) => setAbn(e.target.value)} />
-        <button type="submit">Save</button>
-        <button type="button" onClick={() => setIsEditing(false)}>
-          Cancel
-        </button>
-      </form>
-    );
-  }
-
-  return (
-    <div>
-      <strong>{settings.businessName || 'Your Business Name'}</strong>
-      {settings.abn && <div>ABN: {settings.abn}</div>}
-      <button type="button" className="no-print" onClick={startEdit}>
-        Edit business details
-      </button>
-    </div>
-  );
-}
 
 export function InvoiceView({ job, onClose }: { job: Job; onClose: () => void }) {
   const client = useLiveQuery(() => db.clients.get(job.client_id), [job.client_id]);
@@ -72,7 +22,7 @@ export function InvoiceView({ job, onClose }: { job: Job; onClose: () => void })
   const invoiceDate = formatDate(new Date().toISOString());
 
   return (
-    <div className="invoice-print-area">
+    <div className="print-area">
       <div className="no-print">
         <button type="button" onClick={() => window.print()}>
           Print Invoice
