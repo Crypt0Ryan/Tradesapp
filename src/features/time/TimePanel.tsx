@@ -4,7 +4,7 @@ import { db } from '../../db/database';
 import { startTimer, stopTimer, createTimeEntry, updateTimeEntry, deleteTimeEntry } from '../../db/timeEntryRepository';
 import { updateJob } from '../../db/jobRepository';
 import { CURRENT_USER_ID } from '../currentUser';
-import { formatDate, toDateInputValue } from '../../lib/date';
+import { formatDate, toDateInputValue, dateToInputValue } from '../../lib/date';
 import { gstAmount, incGstAmount } from '../../lib/gst';
 import type { TimeEntry } from '../../models/TimeEntry';
 import type { Job } from '../../models/Job';
@@ -108,7 +108,7 @@ export function TimePanel({ job }: { job: Job }) {
   }, [runningEntry]);
 
   const [hours, setHours] = useState('');
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => dateToInputValue(new Date()));
   const [billable, setBillable] = useState(true);
   const [notes, setNotes] = useState('');
 

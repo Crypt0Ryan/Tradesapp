@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/database';
 import { createTravelEntry, updateTravelEntry, deleteTravelEntry } from '../../db/travelEntryRepository';
 import { CURRENT_USER_ID } from '../currentUser';
-import { formatDate } from '../../lib/date';
+import { formatDate, dateToInputValue } from '../../lib/date';
 import type { TravelEntry } from '../../models/TravelEntry';
 
 function TravelEntryRow({ entry }: { entry: TravelEntry }) {
@@ -65,7 +65,7 @@ export function TravelPanel({ jobId }: { jobId: string }) {
   const entries = useLiveQuery(() => db.travelEntries.where('job_id').equals(jobId).toArray(), [jobId]);
 
   const [distanceKm, setDistanceKm] = useState('');
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => dateToInputValue(new Date()));
   const [personal, setPersonal] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {

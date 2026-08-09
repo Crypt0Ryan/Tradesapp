@@ -28,9 +28,26 @@ export function formatDate(isoDateOrDateTime: string): string {
  * reasoning as formatDate - avoids the UTC-slice timezone bug).
  */
 export function toDateInputValue(isoDateTime: string): string {
-  const date = new Date(isoDateTime);
+  return dateToInputValue(new Date(isoDateTime));
+}
+
+/** Same as toDateInputValue but takes a Date object directly (e.g. one computed from date-range math). */
+export function dateToInputValue(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+export function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+/** Monday of the week containing the given date (Australian/ISO week start). */
+export function mondayOfWeek(date: Date): Date {
+  const day = date.getDay(); // 0 = Sunday ... 6 = Saturday
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  return addDays(date, diffToMonday);
 }

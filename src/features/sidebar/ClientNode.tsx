@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/database';
 import { updateClient, deleteClient } from '../../db/clientRepository';
 import { createJob, deleteJob } from '../../db/jobRepository';
+import { dateToInputValue } from '../../lib/date';
 import type { Client } from '../../models/Client';
 
 export function ClientNode({
@@ -59,7 +60,7 @@ export function ClientNode({
       status: 'quoted',
       quoted_amount: quotedAmount === '' ? null : Number(quotedAmount),
       hourly_rate: null,
-      start_date: new Date().toISOString().slice(0, 10),
+      start_date: dateToInputValue(new Date()),
       notes: '',
     });
 
