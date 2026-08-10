@@ -1,6 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/database';
-import { gstAmount, incGstAmount } from '../../lib/gst';
+import { getBusinessSettings } from '../../lib/businessSettings';
+import { computeJobActualCost } from '../../lib/jobCosting';
+import { formatCurrency } from '../../lib/currency';
 import type { Job } from '../../models/Job';
 
 export function JobSummary({ job }: { job: Job }) {
@@ -8,17 +10,20 @@ export function JobSummary({ job }: { job: Job }) {
   const timeEntries = useLiveQuery(() => db.timeEntries.where('job_id').equals(jobId).toArray(), [jobId]);
   const materialEntries = useLiveQuery(() => db.materialEntries.where('job_id').equals(jobId).toArray(), [jobId]);
   const travelEntries = useLiveQuery(() => db.travelEntries.where('job_id').equals(jobId).toArray(), [jobId]);
+  const kmRate = getBusinessSettings().kmRate;
 
   const totalHours = (timeEntries?.reduce((sum, e) => sum + (e.duration_minutes ?? 0), 0) ?? 0) / 60;
-  const billableMinutes = timeEntries?.reduce((sum, e) => sum + (e.billable ? (e.duration_minutes ?? 0) : 0), 0) ?? 0;
-  const labourCost = job.hourly_rate ? (billableMinutes / 60) * job.hourly_rate : 0;
-  const materialsCost =
-    materialEntries?.reduce((sum, e) => sum + e.quantity * e.unit_cost * (1 + e.markup_pct / 100), 0) ?? 0;
   const totalKm = travelEntries?.reduce((sum, e) => sum + e.distance_km, 0) ?? 0;
 
-  const subtotalExGst = labourCost + materialsCost;
-  const gst = gstAmount(subtotalExGst);
-  const totalIncGst = incGstAmount(subtotalExGst);
+  const { labourCost, materialsCost, travelCost, gst, totalIncGst } = computeJobActualCost(
+    job,
+    timeEntries ?? [],
+    materialEntries ?? [],
+    travelEntries ?? [],
+    kmRate,
+  );
+
+  const variance = job.quoted_amount !== null ? job.quoted_amount - totalIncGst : null;
 
   return (
     <table>
@@ -37,7 +42,9 @@ export function JobSummary({ job }: { job: Job }) {
         </tr>
         <tr>
           <td>Travel</td>
-          <td>{totalKm} km</td>
+          <td>
+            {totalKm} km{kmRate ? ` — $${travelCost.toFixed(2)}` : ' (set $/km rate to cost this)'}
+          </td>
         </tr>
         <tr>
           <td>GST (10%)</td>
@@ -45,12 +52,25 @@ export function JobSummary({ job }: { job: Job }) {
         </tr>
         <tr>
           <td>
-            <strong>Total (inc GST)</strong>
+            <strong>Actual total (inc GST)</strong>
           </td>
           <td>
             <strong>${totalIncGst.toFixed(2)}</strong>
           </td>
         </tr>
+        <tr>
+          <td>Quoted</td>
+          <td>{job.quoted_amount !== null ? `$${job.quoted_amount.toFixed(2)}` : '— not set'}</td>
+        </tr>
+        {variance !== null && (
+          <tr>
+            <td>Variance</td>
+            <td style={{ color: variance < 0 ? '#c0392b' : undefined }}>
+              {variance >= 0 ? '+' : ''}
+              {formatCurrency(variance)} {variance < 0 ? '(over quote)' : '(under quote)'}
+            </td>
+          </tr>
+        )}
       </tbody>
     </table>
   );
