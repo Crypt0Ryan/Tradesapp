@@ -24,10 +24,10 @@ Goal: the features that make this better than a spreadsheet or generic timesheet
 ## Phase 3 — Polish & Scale
 Goal: retention, teams, and integration into existing tradie workflows.
 
-- [ ] Accounting integration (Xero / QuickBooks / MYOB)
-- [ ] Multi-user/team support (subcontractor or apprentice logging against owner's jobs, with permissions)
-- [ ] Job profitability report (quoted vs actual: labour + materials + travel) — no longer blocked: `quoted_amount` is now collected when a job is created and shown in its header. The comparison report itself (quoted vs. actual side by side) still isn't built.
-- [ ] Client-facing shareable progress link (read-only job status/hours, no full app access)
+- [ ] Accounting integration (Xero / QuickBooks / MYOB) — **not achievable in the current architecture without adding a real backend server.** These require OAuth token exchange, which can't be done securely from a pure client-side app. Discussed explicitly with Ryan; deferred.
+- [ ] Multi-user/team support (subcontractor or apprentice logging against owner's jobs, with permissions) — **not achievable without a backend + sync layer.** All data is local IndexedDB, single-browser only; a subcontractor on their own device fundamentally cannot see the same data without something syncing it. Discussed explicitly; deferred.
+- [x] Job profitability report (quoted vs actual: labour + materials + travel) — a "Profitability" view (header button) lists every job with quoted vs actual $ (now including travel, via an optional $/km rate in business settings), sorted worst-overrun-first, with Print + CSV. Each job's own summary also shows its Quoted/Variance line directly.
+- [ ] Client-facing shareable progress link (read-only job status/hours, no full app access) — **not achievable without a backend/hosting component.** A client opening a URL to see live status requires something to host and serve that data from outside Ryan's own device.
 - [ ] End-of-day reminder notifications ("you haven't logged hours today")
 - [ ] Weather auto-log per job/day (useful for delay disputes)
 - [ ] Digital signature capture for on-site client sign-off
