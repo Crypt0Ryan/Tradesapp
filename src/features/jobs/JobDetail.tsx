@@ -9,6 +9,7 @@ import { TravelPanel } from '../travel/TravelPanel';
 import { PhotosPanel } from '../photos/PhotosPanel';
 import { VoiceNotesPanel } from '../voice/VoiceNotesPanel';
 import { ReceiptsPanel } from '../receipts/ReceiptsPanel';
+import { ContractorsPanel } from '../contractors/ContractorsPanel';
 
 const JOB_STATUSES: JobStatus[] = ['quoted', 'active', 'paused', 'complete', 'invoiced'];
 
@@ -91,6 +92,7 @@ export function JobDetail({ job, clientName, onClose }: { job: Job; clientName: 
 
       <JobSummary job={job} />
       <TimePanel job={job} />
+      <ContractorsPanel jobId={job.id} />
       <MaterialsPanel jobId={job.id} />
       <TravelPanel jobId={job.id} />
       <PhotosPanel jobId={job.id} />

@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Client } from '../models/Client';
+import type { ContractorLog } from '../models/ContractorLog';
 import type { Job } from '../models/Job';
 import type { MaterialEntry } from '../models/MaterialEntry';
 import type { Photo } from '../models/Photo';
@@ -17,6 +18,7 @@ export class TradesAppDB extends Dexie {
   photos!: EntityTable<Photo, 'id'>;
   voiceNotes!: EntityTable<VoiceNote, 'id'>;
   receipts!: EntityTable<Receipt, 'id'>;
+  contractorLogs!: EntityTable<ContractorLog, 'id'>;
 
   constructor() {
     super('TradesAppDB');
@@ -29,6 +31,7 @@ export class TradesAppDB extends Dexie {
       photos: 'id, job_id, taken_at',
       voiceNotes: 'id, job_id, status, created_at',
       receipts: 'id, job_id, status, created_at',
+      contractorLogs: 'id, job_id, date',
     });
   }
 }
