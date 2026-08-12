@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { Pencil } from 'lucide-react';
 import { getBusinessSettings, saveBusinessSettings } from '../../lib/businessSettings';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 export function BusinessDetailsHeader() {
   const [settings, setSettings] = useState(getBusinessSettings);
@@ -29,37 +32,44 @@ export function BusinessDetailsHeader() {
 
   if (isEditing) {
     return (
-      <form onSubmit={handleSave} className="no-print">
-        <input
+      <form onSubmit={handleSave} className="no-print flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border p-3">
+        <Input
           type="text"
           placeholder="Your business name"
           value={businessName}
           onChange={(e) => setBusinessName(e.target.value)}
+          className="min-w-40 flex-1"
         />
-        <input type="text" placeholder="ABN" value={abn} onChange={(e) => setAbn(e.target.value)} />
-        <input
+        <Input type="text" placeholder="ABN" value={abn} onChange={(e) => setAbn(e.target.value)} className="w-40" />
+        <Input
           type="number"
           min="0"
           step="any"
-          placeholder="$/km rate (optional, for travel costing)"
+          placeholder="$/km rate (optional)"
           value={kmRate}
           onChange={(e) => setKmRate(e.target.value)}
+          className="w-40"
         />
-        <button type="submit">Save</button>
-        <button type="button" onClick={() => setIsEditing(false)}>
+        <Button type="submit" size="sm">
+          Save
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
           Cancel
-        </button>
+        </Button>
       </form>
     );
   }
 
   return (
-    <div>
-      <strong>{settings.businessName || 'Your Business Name'}</strong>
-      {settings.abn && <div>ABN: {settings.abn}</div>}
-      <button type="button" className="no-print" onClick={startEdit}>
+    <div className="flex items-start justify-between gap-2">
+      <div>
+        <p className="font-semibold text-foreground">{settings.businessName || 'Your Business Name'}</p>
+        {settings.abn && <p className="text-sm text-muted-foreground">ABN: {settings.abn}</p>}
+      </div>
+      <Button type="button" variant="ghost" size="sm" className="no-print gap-1.5" onClick={startEdit}>
+        <Pencil className="size-3.5" />
         Edit business details
-      </button>
+      </Button>
     </div>
   );
 }

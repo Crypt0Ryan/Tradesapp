@@ -1,9 +1,14 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { Printer, X } from 'lucide-react';
 import { db } from '../../db/database';
 import { gstAmount, incGstAmount } from '../../lib/gst';
 import { materialLineTotal } from '../../lib/materials';
 import { formatDate } from '../../lib/date';
+import { formatCurrency } from '../../lib/currency';
 import { BusinessDetailsHeader } from '../business/BusinessDetailsHeader';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import type { Job } from '../../models/Job';
 
 export function InvoiceView({ job, onClose }: { job: Job; onClose: () => void }) {
@@ -22,95 +27,101 @@ export function InvoiceView({ job, onClose }: { job: Job; onClose: () => void })
   const invoiceDate = formatDate(new Date().toISOString());
 
   return (
-    <div className="print-area">
-      <div className="no-print">
-        <button type="button" onClick={() => window.print()}>
+    <div className="print-area mx-auto flex max-w-3xl flex-col gap-4 p-6">
+      <div className="no-print flex gap-2">
+        <Button type="button" onClick={() => window.print()} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
+          <Printer className="size-4" />
           Print Invoice
-        </button>
-        <button type="button" onClick={onClose}>
+        </Button>
+        <Button type="button" variant="outline" onClick={onClose} className="gap-2">
+          <X className="size-4" />
           Close
-        </button>
+        </Button>
       </div>
 
-      <h2>Tax Invoice</h2>
-      <BusinessDetailsHeader />
+      <Card>
+        <CardContent className="flex flex-col gap-6">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground">Tax Invoice</h1>
+              <p className="text-sm text-muted-foreground">
+                {invoiceNumber} · {invoiceDate}
+              </p>
+            </div>
+            <div className="w-full max-w-xs sm:w-auto">
+              <BusinessDetailsHeader />
+            </div>
+          </div>
 
-      <p>
-        Invoice #: {invoiceNumber}
-        <br />
-        Date: {invoiceDate}
-      </p>
+          <div>
+            <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Bill To</h2>
+            <p className="font-medium text-foreground">{client?.name}</p>
+            {client?.contact_info && <p className="text-sm text-muted-foreground">{client.contact_info}</p>}
+            {client?.address && <p className="text-sm text-muted-foreground">{client.address}</p>}
+          </div>
 
-      <h3>Bill To</h3>
-      <p>
-        {client?.name}
-        <br />
-        {client?.contact_info}
-        <br />
-        {client?.address}
-      </p>
+          <div>
+            <h2 className="mb-2 text-lg font-semibold text-foreground">{job.title}</h2>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Qty / Hours</TableHead>
+                  <TableHead>Rate</TableHead>
+                  <TableHead className="text-right">Amount (ex GST)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {job.hourly_rate && billableHours > 0 && (
+                  <TableRow>
+                    <TableCell>Labour</TableCell>
+                    <TableCell>{billableHours.toFixed(2)} hrs</TableCell>
+                    <TableCell>{formatCurrency(job.hourly_rate)}/hr</TableCell>
+                    <TableCell className="text-right">{formatCurrency(labourCost)}</TableCell>
+                  </TableRow>
+                )}
+                {materialEntries?.map((entry) => (
+                  <TableRow key={entry.id}>
+                    <TableCell>{entry.name}</TableCell>
+                    <TableCell>
+                      {entry.quantity} {entry.unit}
+                    </TableCell>
+                    <TableCell>
+                      {formatCurrency(entry.unit_cost)}
+                      {entry.markup_pct > 0 && ` (+${entry.markup_pct}%)`}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(materialLineTotal(entry.quantity, entry.unit_cost, entry.markup_pct))}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!job.hourly_rate && materialEntries?.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-muted-foreground">
+                      Nothing logged against this job yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
-      <h3>{job.title}</h3>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Description</th>
-            <th>Qty / Hours</th>
-            <th>Rate</th>
-            <th>Amount (ex GST)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {job.hourly_rate && billableHours > 0 && (
-            <tr>
-              <td>Labour</td>
-              <td>{billableHours.toFixed(2)} hrs</td>
-              <td>${job.hourly_rate.toFixed(2)}/hr</td>
-              <td>${labourCost.toFixed(2)}</td>
-            </tr>
-          )}
-          {materialEntries?.map((entry) => (
-            <tr key={entry.id}>
-              <td>{entry.name}</td>
-              <td>
-                {entry.quantity} {entry.unit}
-              </td>
-              <td>
-                ${entry.unit_cost.toFixed(2)}
-                {entry.markup_pct > 0 && ` (+${entry.markup_pct}%)`}
-              </td>
-              <td>${materialLineTotal(entry.quantity, entry.unit_cost, entry.markup_pct).toFixed(2)}</td>
-            </tr>
-          ))}
-          {!job.hourly_rate && materialEntries?.length === 0 && (
-            <tr>
-              <td colSpan={4}>Nothing logged against this job yet.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      <table>
-        <tbody>
-          <tr>
-            <td>Subtotal (ex GST)</td>
-            <td>${subtotal.toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td>GST (10%)</td>
-            <td>${gstAmount(subtotal).toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td>
-              <strong>Total (inc GST)</strong>
-            </td>
-            <td>
-              <strong>${incGstAmount(subtotal).toFixed(2)}</strong>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+          <div className="ml-auto flex w-full max-w-xs flex-col gap-1 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Subtotal (ex GST)</span>
+              <span className="text-foreground">{formatCurrency(subtotal)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">GST (10%)</span>
+              <span className="text-foreground">{formatCurrency(gstAmount(subtotal))}</span>
+            </div>
+            <div className="flex justify-between border-t border-border pt-1 text-base font-semibold">
+              <span className="text-foreground">Total (inc GST)</span>
+              <span className="text-foreground">{formatCurrency(incGstAmount(subtotal))}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,9 +1,15 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { Printer, Download, X } from 'lucide-react';
 import { db } from '../../db/database';
 import { formatDate, toDateInputValue, dateToInputValue, addDays, mondayOfWeek } from '../../lib/date';
 import { downloadCsv } from '../../lib/csv';
+import { formatCurrency } from '../../lib/currency';
 import { BusinessDetailsHeader } from '../business/BusinessDetailsHeader';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 
 export function TimesheetView({ onClose }: { onClose: () => void }) {
   const today = new Date();
@@ -73,101 +79,109 @@ export function TimesheetView({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="print-area">
-      <div className="no-print">
-        <button type="button" onClick={() => window.print()}>
+    <div className="print-area mx-auto flex max-w-4xl flex-col gap-4 p-6">
+      <div className="no-print flex gap-2">
+        <Button type="button" onClick={() => window.print()} className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
+          <Printer className="size-4" />
           Print Timesheet
-        </button>
-        <button type="button" onClick={handleExportCsv}>
+        </Button>
+        <Button type="button" variant="outline" onClick={handleExportCsv} className="gap-2">
+          <Download className="size-4" />
           Export CSV
-        </button>
-        <button type="button" onClick={onClose}>
+        </Button>
+        <Button type="button" variant="outline" onClick={onClose} className="gap-2">
+          <X className="size-4" />
           Close
-        </button>
+        </Button>
       </div>
 
-      <h2>Timesheet</h2>
-      <BusinessDetailsHeader />
+      <Card>
+        <CardContent className="flex flex-col gap-6">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground">Timesheet</h1>
+              <p className="text-sm text-muted-foreground">
+                {formatDate(startDate)} – {formatDate(endDate)}
+              </p>
+            </div>
+            <div className="w-full max-w-xs sm:w-auto">
+              <BusinessDetailsHeader />
+            </div>
+          </div>
 
-      <div className="no-print">
-        <button type="button" onClick={() => setPreset('thisWeek')}>
-          This week
-        </button>
-        <button type="button" onClick={() => setPreset('lastWeek')}>
-          Last week
-        </button>
-        <button type="button" onClick={() => setPreset('fortnight')}>
-          Last fortnight
-        </button>
-        <label>
-          From <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-        </label>
-        <label>
-          To <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-        </label>
-      </div>
+          <div className="no-print flex flex-wrap items-center gap-2">
+            <Button type="button" variant="secondary" size="sm" onClick={() => setPreset('thisWeek')}>
+              This week
+            </Button>
+            <Button type="button" variant="secondary" size="sm" onClick={() => setPreset('lastWeek')}>
+              Last week
+            </Button>
+            <Button type="button" variant="secondary" size="sm" onClick={() => setPreset('fortnight')}>
+              Last fortnight
+            </Button>
+            <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
+              <span>From</span>
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-40" />
+              <span>To</span>
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-40" />
+            </div>
+          </div>
 
-      <p>
-        {formatDate(startDate)} – {formatDate(endDate)}
-      </p>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Job</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Hours</TableHead>
+                <TableHead>Billable</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {entriesInRange.map((entry) => {
+                const job = jobFor(entry.job_id);
+                const hours = (entry.duration_minutes ?? 0) / 60;
+                const amount = entry.billable && job?.hourly_rate ? hours * job.hourly_rate : null;
+                return (
+                  <TableRow key={entry.id}>
+                    <TableCell>{formatDate(entry.start_time)}</TableCell>
+                    <TableCell>{job?.title ?? 'Unknown job'}</TableCell>
+                    <TableCell>{clientNameFor(job)}</TableCell>
+                    <TableCell className="text-muted-foreground">{entry.notes}</TableCell>
+                    <TableCell>{hours.toFixed(2)}</TableCell>
+                    <TableCell>{entry.billable ? 'Yes' : 'No'}</TableCell>
+                    <TableCell className="text-right">{amount !== null ? formatCurrency(amount) : '—'}</TableCell>
+                  </TableRow>
+                );
+              })}
+              {entriesInRange.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-muted-foreground">
+                    No time logged in this period.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Job</th>
-            <th>Client</th>
-            <th>Description</th>
-            <th>Hours</th>
-            <th>Billable</th>
-            <th>Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entriesInRange.map((entry) => {
-            const job = jobFor(entry.job_id);
-            const hours = (entry.duration_minutes ?? 0) / 60;
-            const amount = entry.billable && job?.hourly_rate ? hours * job.hourly_rate : null;
-            return (
-              <tr key={entry.id}>
-                <td>{formatDate(entry.start_time)}</td>
-                <td>{job?.title ?? 'Unknown job'}</td>
-                <td>{clientNameFor(job)}</td>
-                <td>{entry.notes}</td>
-                <td>{hours.toFixed(2)}</td>
-                <td>{entry.billable ? 'Yes' : 'No'}</td>
-                <td>{amount !== null ? `$${amount.toFixed(2)}` : '—'}</td>
-              </tr>
-            );
-          })}
-          {entriesInRange.length === 0 && (
-            <tr>
-              <td colSpan={7}>No time logged in this period.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      <table>
-        <tbody>
-          <tr>
-            <td>Total hours</td>
-            <td>{totalHours.toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td>Billable hours</td>
-            <td>{billableHours.toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td>
-              <strong>Billable total</strong>
-            </td>
-            <td>
-              <strong>${billableTotal.toFixed(2)}</strong>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+          <div className="ml-auto flex w-full max-w-xs flex-col gap-1 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total hours</span>
+              <span className="text-foreground">{totalHours.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Billable hours</span>
+              <span className="text-foreground">{billableHours.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between border-t border-border pt-1 text-base font-semibold">
+              <span className="text-foreground">Billable total</span>
+              <span className="text-foreground">{formatCurrency(billableTotal)}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

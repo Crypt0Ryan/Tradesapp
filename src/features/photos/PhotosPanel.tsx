@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { Images, X } from 'lucide-react';
 import { db } from '../../db/database';
 import { createPhoto, updatePhotoCaption, deletePhoto } from '../../db/photoRepository';
 import { formatDate } from '../../lib/date';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import type { Photo } from '../../models/Photo';
 
 function readFileAsDataUrl(file: File): Promise<string> {
@@ -22,21 +26,30 @@ function PhotoCard({ photo }: { photo: Photo }) {
   }
 
   return (
-    <figure style={{ display: 'inline-block', margin: '8px', width: '150px' }}>
-      <img src={photo.image_url} alt={photo.caption || 'Job photo'} style={{ width: '100%' }} />
-      <figcaption>
-        {formatDate(photo.taken_at)}
-        <br />
-        <input
+    <figure className="flex flex-col gap-1.5 overflow-hidden rounded-lg border border-border">
+      <div className="relative aspect-square bg-muted">
+        <img src={photo.image_url} alt={photo.caption || 'Job photo'} className="size-full object-cover" />
+        <Button
+          type="button"
+          variant="destructive"
+          size="icon-sm"
+          onClick={() => deletePhoto(photo.id)}
+          aria-label="Remove photo"
+          className="absolute top-1.5 right-1.5 bg-background/90 text-foreground hover:bg-destructive hover:text-destructive-foreground"
+        >
+          <X className="size-3.5" />
+        </Button>
+      </div>
+      <figcaption className="flex flex-col gap-1 px-2 pb-2">
+        <span className="text-xs text-muted-foreground">{formatDate(photo.taken_at)}</span>
+        <Input
           type="text"
-          placeholder="Caption (e.g. before, after)"
+          placeholder="Caption"
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           onBlur={commitCaption}
+          className="h-9 text-sm"
         />
-        <button type="button" onClick={() => deletePhoto(photo.id)}>
-          Remove
-        </button>
       </figcaption>
     </figure>
   );
@@ -67,33 +80,45 @@ export function PhotosPanel({ jobId }: { jobId: string }) {
   }
 
   return (
-    <section>
-      <h3>Photos</h3>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Images className="size-4.5 text-accent" />
+          Photos
+        </CardTitle>
+      </CardHeader>
 
-      <form onSubmit={handleSubmit}>
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-        />
-        <input
-          type="text"
-          placeholder="Caption (e.g. before, after)"
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-        />
-        <button type="submit" disabled={!file}>
-          Add photo
-        </button>
-      </form>
+      <CardContent className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border p-3">
+          <Input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="flex-1"
+          />
+          <Input
+            type="text"
+            placeholder="Caption (e.g. before, after)"
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            className="w-48"
+          />
+          <Button type="submit" size="sm" variant="secondary" disabled={!file}>
+            Add photo
+          </Button>
+        </form>
 
-      <div>
-        {photos?.map((photo) => (
-          <PhotoCard key={photo.id} photo={photo} />
-        ))}
-        {photos?.length === 0 && <p>No photos yet.</p>}
-      </div>
-    </section>
+        {photos && photos.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {photos.map((photo) => (
+              <PhotoCard key={photo.id} photo={photo} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No photos yet.</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }

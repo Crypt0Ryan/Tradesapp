@@ -16,16 +16,20 @@ export function MainArea({
 
   if (!selectedJobId) {
     return (
-      <>
+      <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
         <VoiceInboxPanel />
         <ReceiptInboxPanel />
-      </>
+      </div>
     );
   }
 
   if (!job) {
-    return <p>Loading…</p>;
+    return <p className="p-6 text-muted-foreground">Loading…</p>;
   }
 
-  return <JobDetail job={job} clientName={client?.name ?? 'Unknown client'} onClose={onCloseJob} />;
+  return (
+    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
+      <JobDetail job={job} clientName={client?.name ?? 'Unknown client'} onClose={onCloseJob} />
+    </div>
+  );
 }

@@ -1,9 +1,15 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { Car, Pencil, Trash2, Plus } from 'lucide-react';
 import { db } from '../../db/database';
 import { createTravelEntry, updateTravelEntry, deleteTravelEntry } from '../../db/travelEntryRepository';
 import { CURRENT_USER_ID } from '../currentUser';
 import { formatDate, dateToInputValue } from '../../lib/date';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import type { TravelEntry } from '../../models/TravelEntry';
 
 function TravelEntryRow({ entry }: { entry: TravelEntry }) {
@@ -31,32 +37,54 @@ function TravelEntryRow({ entry }: { entry: TravelEntry }) {
 
   if (isEditing) {
     return (
-      <li>
-        <form onSubmit={handleSave}>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          <input type="number" min="0" step="any" value={distanceKm} onChange={(e) => setDistanceKm(e.target.value)} />
-          <label>
-            <input type="checkbox" checked={personal} onChange={(e) => setPersonal(e.target.checked)} />
+      <li className="rounded-lg border border-border bg-muted/40 p-3">
+        <form onSubmit={handleSave} className="flex flex-wrap items-center gap-2">
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
+          <Input
+            type="number"
+            min="0"
+            step="any"
+            value={distanceKm}
+            onChange={(e) => setDistanceKm(e.target.value)}
+            className="w-24"
+          />
+          <Label className="flex items-center gap-2 text-sm">
+            <Checkbox checked={personal} onCheckedChange={(checked) => setPersonal(checked === true)} />
             Personal
-          </label>
-          <button type="submit">Save</button>
-          <button type="button" onClick={() => setIsEditing(false)}>
+          </Label>
+          <Button type="submit" size="sm">
+            Save
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
             Cancel
-          </button>
+          </Button>
         </form>
       </li>
     );
   }
 
   return (
-    <li>
-      {formatDate(entry.date)} — {entry.distance_km} km{entry.personal && ' (personal)'}{' '}
-      <button type="button" onClick={startEdit}>
-        Edit
-      </button>
-      <button type="button" onClick={handleDelete}>
-        Delete
-      </button>
+    <li className="flex items-center gap-2 rounded-lg border border-border p-3">
+      <span className="font-medium text-foreground">{formatDate(entry.date)}</span>
+      <span className="text-muted-foreground">{entry.distance_km} km</span>
+      {entry.personal && (
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">personal</span>
+      )}
+      <div className="ml-auto flex gap-1">
+        <Button type="button" variant="ghost" size="icon-sm" onClick={startEdit} aria-label="Edit trip">
+          <Pencil className="size-3.5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={handleDelete}
+          aria-label="Delete trip"
+          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+        >
+          <Trash2 className="size-3.5" />
+        </Button>
+      </div>
     </li>
   );
 }
@@ -91,39 +119,50 @@ export function TravelPanel({ jobId }: { jobId: string }) {
   const workKm = entries?.filter((e) => !e.personal).reduce((sum, e) => sum + e.distance_km, 0) ?? 0;
 
   return (
-    <section>
-      <h3>Travel</h3>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Car className="size-4.5 text-accent" />
+          Travel
+        </CardTitle>
+      </CardHeader>
 
-      <form onSubmit={handleSubmit}>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <input
-          type="number"
-          min="0"
-          step="any"
-          placeholder="km"
-          value={distanceKm}
-          onChange={(e) => setDistanceKm(e.target.value)}
-        />
-        <label>
-          <input type="checkbox" checked={personal} onChange={(e) => setPersonal(e.target.checked)} />
-          Personal (excluded from tax claim)
-        </label>
-        <button type="submit">Add trip</button>
-      </form>
+      <CardContent className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border p-3">
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
+          <Input
+            type="number"
+            min="0"
+            step="any"
+            placeholder="km"
+            value={distanceKm}
+            onChange={(e) => setDistanceKm(e.target.value)}
+            className="w-24"
+          />
+          <Label className="flex items-center gap-2 text-sm">
+            <Checkbox checked={personal} onCheckedChange={(checked) => setPersonal(checked === true)} />
+            Personal (excluded from tax claim)
+          </Label>
+          <Button type="submit" size="sm" variant="secondary" className="ml-auto gap-1.5">
+            <Plus className="size-4" />
+            Add trip
+          </Button>
+        </form>
 
-      <ul>
-        {entries?.map((entry) => (
-          <TravelEntryRow key={entry.id} entry={entry} />
-        ))}
-        {entries?.length === 0 && <li>No trips logged yet.</li>}
-      </ul>
+        <ul className="flex flex-col gap-2">
+          {entries?.map((entry) => (
+            <TravelEntryRow key={entry.id} entry={entry} />
+          ))}
+          {entries?.length === 0 && <li className="text-sm text-muted-foreground">No trips logged yet.</li>}
+        </ul>
+      </CardContent>
+
       {entries && entries.length > 0 && (
-        <p>
-          <strong>
-            Total: {totalKm} km — Work-related: {workKm} km
-          </strong>
-        </p>
+        <CardFooter className="text-sm">
+          <span className="font-semibold text-foreground">Total: {totalKm} km</span>
+          <span className="ml-3 text-muted-foreground">Work-related: {workKm} km</span>
+        </CardFooter>
       )}
-    </section>
+    </Card>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createReceipt, updateReceipt } from '../../db/receiptRepository';
 import { runOcr, parseReceiptFields } from '../../lib/receiptOcr';
+import { Input } from '@/components/ui/input';
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -51,10 +52,10 @@ export function ReceiptCapture({ jobId }: { jobId: string | null }) {
   }
 
   return (
-    <div>
-      <input type="file" accept="image/*" capture="environment" onChange={handleFileSelected} />
-      {isOcrRunning && <p>Reading receipt…</p>}
-      {ocrError && <p role="alert">{ocrError}</p>}
+    <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border p-3">
+      <Input type="file" accept="image/*" capture="environment" onChange={handleFileSelected} />
+      {isOcrRunning && <p className="text-sm text-muted-foreground">Reading receipt…</p>}
+      {ocrError && <p className="text-sm text-destructive">{ocrError}</p>}
     </div>
   );
 }

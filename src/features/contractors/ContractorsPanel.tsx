@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { HardHat, Pencil, Trash2, Plus } from 'lucide-react';
 import { db } from '../../db/database';
 import {
   createContractorLog,
@@ -7,6 +8,10 @@ import {
   deleteContractorLog,
 } from '../../db/contractorLogRepository';
 import { formatDate, dateToInputValue } from '../../lib/date';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { ContractorLog, ContractorRole } from '../../models/ContractorLog';
 
 const ROLES: ContractorRole[] = ['subcontractor', 'apprentice', 'other'];
@@ -47,39 +52,65 @@ function ContractorLogRow({ entry }: { entry: ContractorLog }) {
 
   if (isEditing) {
     return (
-      <li>
-        <form onSubmit={handleSave}>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} />
-          <select value={role} onChange={(e) => setRole(e.target.value as ContractorRole)}>
-            {ROLES.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          <input type="number" min="0" step="any" placeholder="Hours" value={hours} onChange={(e) => setHours(e.target.value)} />
-          <input type="text" placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
-          <button type="submit">Save</button>
-          <button type="button" onClick={() => setIsEditing(false)}>
+      <li className="rounded-lg border border-border bg-muted/40 p-3">
+        <form onSubmit={handleSave} className="flex flex-wrap items-center gap-2">
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="min-w-32 flex-1" />
+          <Select value={role} onValueChange={(v) => setRole(v as ContractorRole)}>
+            <SelectTrigger className="w-36 capitalize">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ROLES.map((r) => (
+                <SelectItem key={r} value={r} className="capitalize">
+                  {r}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
+          <Input
+            type="number"
+            min="0"
+            step="any"
+            placeholder="Hours"
+            value={hours}
+            onChange={(e) => setHours(e.target.value)}
+            className="w-24"
+          />
+          <Input placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="min-w-32 flex-1" />
+          <Button type="submit" size="sm">
+            Save
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
             Cancel
-          </button>
+          </Button>
         </form>
       </li>
     );
   }
 
   return (
-    <li>
-      {formatDate(entry.date)} — <strong>{entry.name}</strong> ({entry.role})
-      {entry.hours !== null && ` — ${entry.hours.toFixed(2)} hrs`}
-      {entry.notes && ` — ${entry.notes}`}{' '}
-      <button type="button" onClick={startEdit}>
-        Edit
-      </button>
-      <button type="button" onClick={handleDelete}>
-        Delete
-      </button>
+    <li className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-3">
+      <span className="font-medium text-foreground">{entry.name}</span>
+      <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground capitalize">{entry.role}</span>
+      <span className="text-muted-foreground">{formatDate(entry.date)}</span>
+      {entry.hours !== null && <span className="text-muted-foreground">{entry.hours.toFixed(2)} hrs</span>}
+      {entry.notes && <span className="text-muted-foreground italic">{entry.notes}</span>}
+      <div className="ml-auto flex gap-1">
+        <Button type="button" variant="ghost" size="icon-sm" onClick={startEdit} aria-label="Edit contractor entry">
+          <Pencil className="size-3.5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={handleDelete}
+          aria-label="Delete contractor entry"
+          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+        >
+          <Trash2 className="size-3.5" />
+        </Button>
+      </div>
     </li>
   );
 }
@@ -112,37 +143,61 @@ export function ContractorsPanel({ jobId }: { jobId: string }) {
   }
 
   return (
-    <section>
-      <h3>Contractors on Site</h3>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <HardHat className="size-4.5 text-accent" />
+          Contractors on Site
+        </CardTitle>
+      </CardHeader>
 
-      <form onSubmit={handleSubmit}>
-        <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-        <select value={role} onChange={(e) => setRole(e.target.value as ContractorRole)}>
-          {ROLES.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
+      <CardContent className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border p-3">
+          <Input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} className="min-w-32 flex-1" />
+          <Select value={role} onValueChange={(v) => setRole(v as ContractorRole)}>
+            <SelectTrigger className="w-36 capitalize">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ROLES.map((r) => (
+                <SelectItem key={r} value={r} className="capitalize">
+                  {r}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
+          <Input
+            type="number"
+            min="0"
+            step="any"
+            placeholder="Hours (optional)"
+            value={hours}
+            onChange={(e) => setHours(e.target.value)}
+            className="w-32"
+          />
+          <Input
+            type="text"
+            placeholder="Notes (optional)"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="min-w-32 flex-1"
+          />
+          <Button type="submit" size="sm" variant="secondary" className="gap-1.5">
+            <Plus className="size-4" />
+            Add
+          </Button>
+        </form>
+
+        <ul className="flex flex-col gap-2">
+          {entries?.map((entry) => (
+            <ContractorLogRow key={entry.id} entry={entry} />
           ))}
-        </select>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <input
-          type="number"
-          min="0"
-          step="any"
-          placeholder="Hours (optional)"
-          value={hours}
-          onChange={(e) => setHours(e.target.value)}
-        />
-        <input type="text" placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
-        <button type="submit">Add</button>
-      </form>
-
-      <ul>
-        {entries?.map((entry) => (
-          <ContractorLogRow key={entry.id} entry={entry} />
-        ))}
-        {entries?.length === 0 && <li>No contractors logged on site for this job yet.</li>}
-      </ul>
-    </section>
+          {entries?.length === 0 && (
+            <li className="text-sm text-muted-foreground">No contractors logged on site for this job yet.</li>
+          )}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }

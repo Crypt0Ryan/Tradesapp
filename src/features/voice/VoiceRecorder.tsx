@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
+import { Mic, Square } from 'lucide-react';
 import { createVoiceNote } from '../../db/voiceNoteRepository';
+import { Button } from '@/components/ui/button';
 
 function getSpeechRecognitionCtor(): (new () => SpeechRecognition) | undefined {
   return window.SpeechRecognition ?? window.webkitSpeechRecognition;
@@ -105,27 +107,34 @@ export function VoiceRecorder({ jobId }: { jobId: string | null }) {
   }
 
   return (
-    <div>
+    <div className="flex flex-col gap-2">
       {isRecording ? (
-        <button type="button" onClick={handleStop}>
+        <Button type="button" variant="destructive" onClick={handleStop} className="w-fit gap-2">
+          <Square className="size-4 animate-pulse" />
           Stop recording
-        </button>
+        </Button>
       ) : (
-        <button type="button" onClick={handleStart} disabled={isSaving}>
-          {isSaving ? 'Saving…' : '🎙 Record voice note'}
-        </button>
+        <Button
+          type="button"
+          onClick={handleStart}
+          disabled={isSaving}
+          className="w-fit gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+        >
+          <Mic className="size-4" />
+          {isSaving ? 'Saving…' : 'Record voice note'}
+        </Button>
       )}
       {isRecording && (
-        <p>
+        <p className="text-sm text-muted-foreground">
           Recording…{' '}
           {isTranscriptionSupported ? (
-            <em>{transcript || 'listening…'}</em>
+            <span className="italic">{transcript || 'listening…'}</span>
           ) : (
-            <em>(live transcription not supported in this browser - audio will still be saved)</em>
+            <span className="italic">(live transcription not supported in this browser - audio will still be saved)</span>
           )}
         </p>
       )}
-      {error && <p role="alert">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   );
 }

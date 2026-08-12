@@ -1,8 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { Mic } from 'lucide-react';
 import { db } from '../../db/database';
 import { listUnassignedVoiceNotes } from '../../db/voiceNoteRepository';
 import { VoiceRecorder } from './VoiceRecorder';
 import { VoiceNoteCard } from './VoiceNoteCard';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 export function VoiceInboxPanel() {
   const notes = useLiveQuery(() => listUnassignedVoiceNotes(), []);
@@ -16,18 +18,25 @@ export function VoiceInboxPanel() {
     })) ?? [];
 
   return (
-    <section>
-      <h2>Voice Notes</h2>
-      <p>Capture a quick note before you know which job it belongs to - assign it later.</p>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Mic className="size-4.5 text-accent" />
+          Voice Notes
+        </CardTitle>
+        <CardDescription>Capture a quick note before you know which job it belongs to - assign it later.</CardDescription>
+      </CardHeader>
 
-      <VoiceRecorder jobId={null} />
+      <CardContent className="flex flex-col gap-4">
+        <VoiceRecorder jobId={null} />
 
-      <ul>
-        {notes?.map((note) => (
-          <VoiceNoteCard key={note.id} note={note} assignableJobs={jobsForAssignment} />
-        ))}
-        {notes?.length === 0 && <li>No unassigned voice notes.</li>}
-      </ul>
-    </section>
+        <ul className="flex flex-col gap-2">
+          {notes?.map((note) => (
+            <VoiceNoteCard key={note.id} note={note} assignableJobs={jobsForAssignment} />
+          ))}
+          {notes?.length === 0 && <li className="text-sm text-muted-foreground">No unassigned voice notes.</li>}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }

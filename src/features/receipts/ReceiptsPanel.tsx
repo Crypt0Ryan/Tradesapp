@@ -1,7 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { Receipt as ReceiptIcon } from 'lucide-react';
 import { db } from '../../db/database';
 import { ReceiptCapture } from './ReceiptCapture';
 import { ReceiptCard } from './ReceiptCard';
+import { formatCurrency } from '../../lib/currency';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 
 export function ReceiptsPanel({ jobId }: { jobId: string }) {
   const receipts = useLiveQuery(() => db.receipts.where('job_id').equals(jobId).toArray(), [jobId]);
@@ -9,22 +12,30 @@ export function ReceiptsPanel({ jobId }: { jobId: string }) {
   const total = receipts?.reduce((sum, r) => sum + (r.total ?? 0), 0) ?? 0;
 
   return (
-    <section>
-      <h3>Receipts</h3>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <ReceiptIcon className="size-4.5 text-accent" />
+          Receipts
+        </CardTitle>
+      </CardHeader>
 
-      <ReceiptCapture jobId={jobId} />
+      <CardContent className="flex flex-col gap-4">
+        <ReceiptCapture jobId={jobId} />
 
-      <ul>
-        {receipts?.map((receipt) => (
-          <ReceiptCard key={receipt.id} receipt={receipt} />
-        ))}
-        {receipts?.length === 0 && <li>No receipts for this job yet.</li>}
-      </ul>
+        <ul className="flex flex-col gap-2">
+          {receipts?.map((receipt) => (
+            <ReceiptCard key={receipt.id} receipt={receipt} />
+          ))}
+          {receipts?.length === 0 && <li className="text-sm text-muted-foreground">No receipts for this job yet.</li>}
+        </ul>
+      </CardContent>
+
       {receipts && receipts.length > 0 && (
-        <p>
-          <strong>Receipts total: ${total.toFixed(2)}</strong>
-        </p>
+        <CardFooter className="text-sm">
+          <span className="font-semibold text-foreground">Receipts total: {formatCurrency(total)}</span>
+        </CardFooter>
       )}
-    </section>
+    </Card>
   );
 }

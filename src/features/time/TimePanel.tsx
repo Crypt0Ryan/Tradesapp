@@ -1,11 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { Play, Square, Pencil, Trash2, Clock } from 'lucide-react';
 import { db } from '../../db/database';
 import { startTimer, stopTimer, createTimeEntry, updateTimeEntry, deleteTimeEntry } from '../../db/timeEntryRepository';
 import { updateJob } from '../../db/jobRepository';
 import { CURRENT_USER_ID } from '../currentUser';
 import { formatDate, toDateInputValue, dateToInputValue } from '../../lib/date';
 import { gstAmount, incGstAmount } from '../../lib/gst';
+import { formatCurrency } from '../../lib/currency';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import type { TimeEntry } from '../../models/TimeEntry';
 import type { Job } from '../../models/Job';
 
@@ -56,36 +64,59 @@ function TimeEntryRow({ entry }: { entry: TimeEntry }) {
 
   if (isEditing) {
     return (
-      <li>
-        <form onSubmit={handleSave}>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          <input type="number" min="0" step="any" value={hours} onChange={(e) => setHours(e.target.value)} />
-          <label>
-            <input type="checkbox" checked={billable} onChange={(e) => setBillable(e.target.checked)} />
+      <li className="rounded-lg border border-border bg-muted/40 p-3">
+        <form onSubmit={handleSave} className="flex flex-wrap items-center gap-2">
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
+          <Input
+            type="number"
+            min="0"
+            step="any"
+            value={hours}
+            onChange={(e) => setHours(e.target.value)}
+            className="w-24"
+          />
+          <Label className="flex items-center gap-2 text-sm">
+            <Checkbox checked={billable} onCheckedChange={(checked) => setBillable(checked === true)} />
             Billable
-          </label>
-          <button type="submit">Save</button>
-          <button type="button" onClick={() => setIsEditing(false)}>
+          </Label>
+          <Button type="submit" size="sm">
+            Save
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
             Cancel
-          </button>
+          </Button>
         </form>
       </li>
     );
   }
 
   return (
-    <li>
-      {formatDate(entry.start_time)} — {((entry.duration_minutes ?? 0) / 60).toFixed(2)} hrs
-      {!entry.billable && ' (non-billable)'} — <em>{entry.source}</em>{' '}
-      <button type="button" onClick={startEdit}>
-        Edit
-      </button>
-      <button type="button" onClick={handleDelete}>
-        Delete
-      </button>
-      <br />
-      <textarea
-        rows={3}
+    <li className="flex flex-col gap-2 rounded-lg border border-border p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium text-foreground">{formatDate(entry.start_time)}</span>
+        <span className="text-muted-foreground">{((entry.duration_minutes ?? 0) / 60).toFixed(2)} hrs</span>
+        {!entry.billable && (
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">non-billable</span>
+        )}
+        <span className="text-xs text-muted-foreground italic">{entry.source}</span>
+        <div className="ml-auto flex gap-1">
+          <Button type="button" variant="ghost" size="icon-sm" onClick={startEdit} aria-label="Edit entry">
+            <Pencil className="size-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleDelete}
+            aria-label="Delete entry"
+            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        </div>
+      </div>
+      <Textarea
+        rows={2}
         placeholder="What did you do? (e.g. plumbed toilet, then press Enter for the next item)"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
@@ -99,6 +130,7 @@ export function TimePanel({ job }: { job: Job }) {
   const jobId = job.id;
   const entries = useLiveQuery(() => db.timeEntries.where('job_id').equals(jobId).toArray(), [jobId]);
   const runningEntry = entries?.find((e) => e.end_time === null) ?? null;
+  const loggedEntries = entries?.filter((e) => e.end_time !== null) ?? [];
 
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -154,81 +186,100 @@ export function TimePanel({ job }: { job: Job }) {
   const earnings = job.hourly_rate ? (billableMinutes / 60) * job.hourly_rate : null;
 
   return (
-    <section>
-      <h3>Time</h3>
+    <Card>
+      <CardHeader className="flex flex-wrap items-center justify-between gap-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Clock className="size-4.5 text-accent" />
+          Time
+        </CardTitle>
+        <Label className="flex items-center gap-2 text-sm text-muted-foreground">
+          Hourly rate $
+          <Input
+            type="number"
+            min="0"
+            step="any"
+            placeholder="e.g. 85"
+            value={rateInput}
+            onChange={(e) => setRateInput(e.target.value)}
+            onBlur={commitRate}
+            className="w-24"
+          />
+        </Label>
+      </CardHeader>
 
-      <label>
-        Hourly rate $
-        <input
-          type="number"
-          min="0"
-          step="any"
-          placeholder="e.g. 85"
-          value={rateInput}
-          onChange={(e) => setRateInput(e.target.value)}
-          onBlur={commitRate}
-        />
-      </label>
+      <CardContent className="flex flex-col gap-4">
+        {runningEntry ? (
+          <div className="flex items-center justify-between rounded-lg bg-accent/10 px-4 py-3">
+            <div className="flex items-center gap-2 font-mono text-xl font-semibold text-accent">
+              {formatElapsed(runningEntry.start_time, now)}
+            </div>
+            <Button type="button" variant="destructive" onClick={handleStop} className="gap-2">
+              <Square className="size-4" />
+              Stop timer
+            </Button>
+          </div>
+        ) : (
+          <Button type="button" onClick={handleStart} className="w-fit gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
+            <Play className="size-4" />
+            Start timer
+          </Button>
+        )}
 
-      {runningEntry ? (
-        <p>
-          Timer running: <strong>{formatElapsed(runningEntry.start_time, now)}</strong>{' '}
-          <button type="button" onClick={handleStop}>
-            Stop timer
-          </button>
-        </p>
-      ) : (
-        <button type="button" onClick={handleStart}>
-          Start timer
-        </button>
-      )}
+        <form onSubmit={handleManualSubmit} className="flex flex-col gap-2 rounded-lg border border-dashed border-border p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
+            <Input
+              type="number"
+              min="0"
+              step="any"
+              placeholder="Hours"
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
+              className="w-24"
+            />
+            <Label className="flex items-center gap-2 text-sm">
+              <Checkbox checked={billable} onCheckedChange={(checked) => setBillable(checked === true)} />
+              Billable
+            </Label>
+            <Button type="submit" size="sm" variant="secondary" className="ml-auto">
+              Log manual time
+            </Button>
+          </div>
+          <Textarea
+            rows={2}
+            placeholder="What did you do? (e.g. plumbed toilet, then press Enter for the next item)"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+        </form>
 
-      <form onSubmit={handleManualSubmit}>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <input
-          type="number"
-          min="0"
-          step="any"
-          placeholder="Hours"
-          value={hours}
-          onChange={(e) => setHours(e.target.value)}
-        />
-        <textarea
-          rows={3}
-          placeholder="What did you do? (e.g. plumbed toilet, then press Enter for the next item)"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
-        <label>
-          <input type="checkbox" checked={billable} onChange={(e) => setBillable(e.target.checked)} />
-          Billable
-        </label>
-        <button type="submit">Log manual time</button>
-      </form>
-
-      <ul>
-        {entries
-          ?.filter((e) => e.end_time !== null)
-          .map((entry) => (
+        <ul className="flex flex-col gap-2">
+          {loggedEntries.map((entry) => (
             <TimeEntryRow key={entry.id} entry={entry} />
           ))}
-        {entries?.filter((e) => e.end_time !== null).length === 0 && <li>No time logged yet.</li>}
-      </ul>
+          {loggedEntries.length === 0 && <li className="text-sm text-muted-foreground">No time logged yet.</li>}
+        </ul>
+      </CardContent>
+
       {entries && entries.length > 0 && (
-        <p>
-          <strong>Total: {totalHours.toFixed(2)} hrs</strong>
+        <CardFooter className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+          <span className="font-semibold text-foreground">Total: {totalHours.toFixed(2)} hrs</span>
           {earnings !== null && (
             <>
-              {' — '}
-              <strong>Billable (ex GST): ${earnings.toFixed(2)}</strong>
-              {' — '}
-              GST: ${gstAmount(earnings).toFixed(2)}
-              {' — '}
-              <strong>Total (inc GST): ${incGstAmount(earnings).toFixed(2)}</strong>
+              <span className="text-muted-foreground">
+                Billable (ex GST) <span className="font-medium text-foreground">{formatCurrency(earnings)}</span>
+              </span>
+              <span className="text-muted-foreground">
+                GST <span className="font-medium text-foreground">{formatCurrency(gstAmount(earnings))}</span>
+              </span>
+              <span className="text-muted-foreground">
+                Total (inc GST){' '}
+                <span className="font-semibold text-foreground">{formatCurrency(incGstAmount(earnings))}</span>
+              </span>
             </>
           )}
-        </p>
+        </CardFooter>
       )}
-    </section>
+    </Card>
   );
 }
