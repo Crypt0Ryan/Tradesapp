@@ -18,6 +18,7 @@ export function ProfitabilityReport({ onClose }: { onClose: () => void }) {
   const timeEntries = useLiveQuery(() => db.timeEntries.toArray(), []);
   const materialEntries = useLiveQuery(() => db.materialEntries.toArray(), []);
   const travelEntries = useLiveQuery(() => db.travelEntries.toArray(), []);
+  const contractorLogs = useLiveQuery(() => db.contractorLogs.toArray(), []);
   const kmRate = getBusinessSettings().kmRate;
 
   const rows = (jobs ?? [])
@@ -27,6 +28,7 @@ export function ProfitabilityReport({ onClose }: { onClose: () => void }) {
         (timeEntries ?? []).filter((e) => e.job_id === job.id),
         (materialEntries ?? []).filter((e) => e.job_id === job.id),
         (travelEntries ?? []).filter((e) => e.job_id === job.id),
+        (contractorLogs ?? []).filter((c) => c.job_id === job.id),
         kmRate,
       );
       const clientName = clients?.find((c) => c.id === job.client_id)?.name ?? 'Unknown client';

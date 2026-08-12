@@ -7,6 +7,7 @@ export interface ContractorLog {
   role: ContractorRole;
   date: string;
   hours: number | null;
+  hourly_rate: number | null;
   notes: string;
 }
 

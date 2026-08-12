@@ -1,14 +1,20 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Package, Pencil, Trash2, Plus } from 'lucide-react';
+import { Package, Pencil, Trash2, Plus, Library, X } from 'lucide-react';
 import { db } from '../../db/database';
 import { createMaterialEntry, updateMaterialEntry, deleteMaterialEntry } from '../../db/materialEntryRepository';
+import {
+  listMaterialLibrary,
+  upsertMaterialLibraryItem,
+  deleteMaterialLibraryItem,
+} from '../../db/materialLibraryRepository';
 import { gstAmount, incGstAmount } from '../../lib/gst';
 import { materialLineTotal as lineTotal } from '../../lib/materials';
 import { formatCurrency } from '../../lib/currency';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import type { MaterialEntry } from '../../models/MaterialEntry';
 
@@ -111,27 +117,44 @@ function MaterialEntryRow({ entry }: { entry: MaterialEntry }) {
 
 export function MaterialsPanel({ jobId }: { jobId: string }) {
   const entries = useLiveQuery(() => db.materialEntries.where('job_id').equals(jobId).toArray(), [jobId]);
+  const library = useLiveQuery(() => listMaterialLibrary(), []);
 
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [unit, setUnit] = useState('');
   const [unitCost, setUnitCost] = useState('');
   const [markupPct, setMarkupPct] = useState('0');
+  const [showLibrary, setShowLibrary] = useState(false);
+
+  function handleNameBlur() {
+    // Don't clobber fields the user's already filled in by hand.
+    if (unit || unitCost) return;
+    const match = library?.find((item) => item.name.toLowerCase() === name.trim().toLowerCase());
+    if (match) {
+      setUnit(match.unit);
+      setUnitCost(String(match.unit_cost));
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !unitCost) return;
 
+    const trimmedName = name.trim();
+    const trimmedUnit = unit.trim();
+    const cost = Number(unitCost) || 0;
+
     await createMaterialEntry({
       job_id: jobId,
-      name: name.trim(),
+      name: trimmedName,
       quantity: Number(quantity) || 0,
-      unit: unit.trim(),
-      unit_cost: Number(unitCost) || 0,
+      unit: trimmedUnit,
+      unit_cost: cost,
       markup_pct: Number(markupPct) || 0,
       source: 'manual',
       receipt_id: null,
     });
+    await upsertMaterialLibraryItem({ name: trimmedName, unit: trimmedUnit, unit_cost: cost });
 
     setName('');
     setQuantity('1');
@@ -153,7 +176,18 @@ export function MaterialsPanel({ jobId }: { jobId: string }) {
 
       <CardContent className="flex flex-col gap-4">
         <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border p-3">
-          <Input type="text" placeholder="Item" value={name} onChange={(e) => setName(e.target.value)} className="min-w-32 flex-1" />
+          <Input
+            type="text"
+            list="material-library-options"
+            placeholder="Item"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={handleNameBlur}
+            className="min-w-32 flex-1"
+          />
+          <datalist id="material-library-options">
+            {library?.map((item) => <option key={item.id} value={item.name} />)}
+          </datalist>
           <Input
             type="number"
             min="0"
@@ -193,6 +227,41 @@ export function MaterialsPanel({ jobId }: { jobId: string }) {
             Add
           </Button>
         </form>
+
+        {library && library.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowLibrary((v) => !v)}
+              className="w-fit gap-1.5 text-muted-foreground"
+            >
+              <Library className="size-3.5" />
+              {showLibrary ? 'Hide' : 'Show'} material library ({library.length})
+            </Button>
+            {showLibrary && (
+              <ul className="flex flex-wrap gap-1.5">
+                {library.map((item) => (
+                  <li key={item.id}>
+                    <Badge variant="secondary" className="gap-1.5 py-1 pr-1 pl-2.5">
+                      {item.name} · {formatCurrency(item.unit_cost)}
+                      {item.unit ? `/${item.unit}` : ''}
+                      <button
+                        type="button"
+                        onClick={() => deleteMaterialLibraryItem(item.id)}
+                        aria-label={`Remove ${item.name} from library`}
+                        className="rounded-full p-0.5 hover:bg-background/60"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         {entries && entries.length > 0 ? (
           <Table>

@@ -8,6 +8,7 @@ import {
   deleteContractorLog,
 } from '../../db/contractorLogRepository';
 import { formatDate, dateToInputValue } from '../../lib/date';
+import { formatCurrency } from '../../lib/currency';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ function ContractorLogRow({ entry }: { entry: ContractorLog }) {
   const [role, setRole] = useState(entry.role);
   const [date, setDate] = useState(entry.date);
   const [hours, setHours] = useState(entry.hours?.toString() ?? '');
+  const [hourlyRate, setHourlyRate] = useState(entry.hourly_rate?.toString() ?? '');
   const [notes, setNotes] = useState(entry.notes);
 
   function startEdit() {
@@ -29,6 +31,7 @@ function ContractorLogRow({ entry }: { entry: ContractorLog }) {
     setRole(entry.role);
     setDate(entry.date);
     setHours(entry.hours?.toString() ?? '');
+    setHourlyRate(entry.hourly_rate?.toString() ?? '');
     setNotes(entry.notes);
     setIsEditing(true);
   }
@@ -41,6 +44,7 @@ function ContractorLogRow({ entry }: { entry: ContractorLog }) {
       role,
       date,
       hours: hours === '' ? null : Number(hours),
+      hourly_rate: hourlyRate === '' ? null : Number(hourlyRate),
       notes: notes.trim(),
     });
     setIsEditing(false);
@@ -77,6 +81,15 @@ function ContractorLogRow({ entry }: { entry: ContractorLog }) {
             onChange={(e) => setHours(e.target.value)}
             className="w-24"
           />
+          <Input
+            type="number"
+            min="0"
+            step="any"
+            placeholder="Rate $/hr"
+            value={hourlyRate}
+            onChange={(e) => setHourlyRate(e.target.value)}
+            className="w-28"
+          />
           <Input placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="min-w-32 flex-1" />
           <Button type="submit" size="sm">
             Save
@@ -95,6 +108,12 @@ function ContractorLogRow({ entry }: { entry: ContractorLog }) {
       <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground capitalize">{entry.role}</span>
       <span className="text-muted-foreground">{formatDate(entry.date)}</span>
       {entry.hours !== null && <span className="text-muted-foreground">{entry.hours.toFixed(2)} hrs</span>}
+      {entry.hourly_rate !== null && (
+        <span className="text-muted-foreground">{formatCurrency(entry.hourly_rate)}/hr</span>
+      )}
+      {entry.hours !== null && entry.hourly_rate !== null && (
+        <span className="font-medium text-foreground">{formatCurrency(entry.hours * entry.hourly_rate)}</span>
+      )}
       {entry.notes && <span className="text-muted-foreground italic">{entry.notes}</span>}
       <div className="ml-auto flex gap-1">
         <Button type="button" variant="ghost" size="icon-sm" onClick={startEdit} aria-label="Edit contractor entry">
@@ -122,6 +141,7 @@ export function ContractorsPanel({ jobId }: { jobId: string }) {
   const [role, setRole] = useState<ContractorRole>('subcontractor');
   const [date, setDate] = useState(() => dateToInputValue(new Date()));
   const [hours, setHours] = useState('');
+  const [hourlyRate, setHourlyRate] = useState('');
   const [notes, setNotes] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
@@ -134,11 +154,13 @@ export function ContractorsPanel({ jobId }: { jobId: string }) {
       role,
       date,
       hours: hours === '' ? null : Number(hours),
+      hourly_rate: hourlyRate === '' ? null : Number(hourlyRate),
       notes: notes.trim(),
     });
 
     setName('');
     setHours('');
+    setHourlyRate('');
     setNotes('');
   }
 
@@ -175,6 +197,15 @@ export function ContractorsPanel({ jobId }: { jobId: string }) {
             value={hours}
             onChange={(e) => setHours(e.target.value)}
             className="w-32"
+          />
+          <Input
+            type="number"
+            min="0"
+            step="any"
+            placeholder="Rate $/hr (optional)"
+            value={hourlyRate}
+            onChange={(e) => setHourlyRate(e.target.value)}
+            className="w-36"
           />
           <Input
             type="text"

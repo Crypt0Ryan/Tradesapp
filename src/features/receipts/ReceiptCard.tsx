@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, PackagePlus } from 'lucide-react';
 import { updateReceipt, assignReceiptToJob, deleteReceipt } from '../../db/receiptRepository';
+import { createMaterialEntry } from '../../db/materialEntryRepository';
+import { upsertMaterialLibraryItem } from '../../db/materialLibraryRepository';
 import { formatDate } from '../../lib/date';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Receipt } from '../../models/Receipt';
+import type { Receipt, ReceiptLineItem } from '../../models/Receipt';
 import type { Job } from '../../models/Job';
+
+interface LineItemDraft extends ReceiptLineItem {
+  selected: boolean;
+}
 
 export function ReceiptCard({
   receipt,
@@ -19,6 +26,9 @@ export function ReceiptCard({
   const [vendor, setVendor] = useState(receipt.vendor ?? '');
   const [date, setDate] = useState(receipt.date ?? '');
   const [total, setTotal] = useState(receipt.total?.toString() ?? '');
+  const [lineItemDrafts, setLineItemDrafts] = useState<LineItemDraft[]>(() =>
+    receipt.line_items.map((item) => ({ ...item, selected: true })),
+  );
 
   // OCR fills these in asynchronously after this card has already rendered
   // with nulls - re-sync once it lands, so the guesses actually show up.
@@ -27,6 +37,10 @@ export function ReceiptCard({
     setDate(receipt.date ?? '');
     setTotal(receipt.total?.toString() ?? '');
   }, [receipt.vendor, receipt.date, receipt.total]);
+
+  useEffect(() => {
+    setLineItemDrafts(receipt.line_items.map((item) => ({ ...item, selected: true })));
+  }, [receipt.line_items]);
 
   async function commitField(changes: Partial<Pick<Receipt, 'vendor' | 'date' | 'total'>>) {
     await updateReceipt(receipt.id, changes);
@@ -38,6 +52,36 @@ export function ReceiptCard({
 
   async function handleDelete() {
     await deleteReceipt(receipt.id);
+  }
+
+  function updateLineItemDraft(index: number, changes: Partial<LineItemDraft>) {
+    setLineItemDrafts((drafts) => drafts.map((draft, i) => (i === index ? { ...draft, ...changes } : draft)));
+  }
+
+  async function handleAddSelectedToMaterials() {
+    const jobId = receipt.job_id;
+    if (!jobId) return;
+
+    const toAdd = lineItemDrafts.filter((item) => item.selected);
+    if (toAdd.length === 0) return;
+
+    for (const item of toAdd) {
+      const description = item.description.trim() || 'Receipt item';
+      await createMaterialEntry({
+        job_id: jobId,
+        name: description,
+        quantity: 1,
+        unit: 'item',
+        unit_cost: item.amount,
+        markup_pct: 0,
+        source: 'receipt_ocr',
+        receipt_id: receipt.id,
+      });
+      await upsertMaterialLibraryItem({ name: description, unit: 'item', unit_cost: item.amount });
+    }
+
+    const remaining = lineItemDrafts.filter((item) => !item.selected).map(({ description, amount }) => ({ description, amount }));
+    await updateReceipt(receipt.id, { line_items: remaining });
   }
 
   return (
@@ -100,6 +144,38 @@ export function ReceiptCard({
               ))}
             </SelectContent>
           </Select>
+        )}
+
+        {receipt.job_id && lineItemDrafts.length > 0 && (
+          <div className="flex flex-col gap-1.5 rounded-lg border border-dashed border-border p-2">
+            <span className="text-xs font-medium text-muted-foreground">Parsed items - add to materials?</span>
+            {lineItemDrafts.map((item, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <Checkbox
+                  checked={item.selected}
+                  onCheckedChange={(checked) => updateLineItemDraft(i, { selected: checked === true })}
+                  aria-label={`Include ${item.description || 'item'}`}
+                />
+                <Input
+                  value={item.description}
+                  onChange={(e) => updateLineItemDraft(i, { description: e.target.value })}
+                  className="min-w-0 flex-1"
+                />
+                <Input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={item.amount}
+                  onChange={(e) => updateLineItemDraft(i, { amount: Number(e.target.value) || 0 })}
+                  className="w-24"
+                />
+              </div>
+            ))}
+            <Button type="button" size="sm" variant="secondary" onClick={handleAddSelectedToMaterials} className="w-fit gap-1.5">
+              <PackagePlus className="size-4" />
+              Add checked to materials
+            </Button>
+          </div>
         )}
       </div>
     </li>

@@ -1,4 +1,5 @@
 import { recognize } from 'tesseract.js';
+import type { ReceiptLineItem } from '../models/Receipt';
 
 export interface OcrResult {
   rawText: string;
@@ -60,4 +61,41 @@ export function parseReceiptFields(rawText: string): ParsedReceiptFields {
   const total = amounts.length > 0 ? Math.max(...amounts) : null;
 
   return { vendor, date, total };
+}
+
+// Lines that are receipt boilerplate rather than a purchased item, even
+// though they often end in a dollar amount too (e.g. "GST $4.50").
+const NON_ITEM_LINE_PATTERN =
+  /\b(sub ?total|total|gst|tax|change|cash|eftpos|visa|mastercard|amex|card|balance|amount due|thank you|receipt|invoice|tel|phone|abn|acn|www\.|\.com|date|time|qty|approved|auth|ref)\b/i;
+const ITEM_LINE_PATTERN = /^(.{2,60}?)\s+\$?\s?(\d{1,4}(?:[.,]\d{2}))\s*$/;
+
+/**
+ * Best-effort split of a receipt's raw OCR text into candidate purchased
+ * items (description + amount), one per line that looks like "name ... price"
+ * and isn't an obvious total/tax/payment-method line. Same heuristic
+ * philosophy as parseReceiptFields - never auto-confirmed, always shown to
+ * the user to check/edit/deselect before anything is added to a job.
+ */
+export function parseReceiptLineItems(rawText: string): ReceiptLineItem[] {
+  const lines = rawText
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const items: ReceiptLineItem[] = [];
+  for (const line of lines) {
+    if (NON_ITEM_LINE_PATTERN.test(line)) continue;
+
+    const match = line.match(ITEM_LINE_PATTERN);
+    if (!match) continue;
+
+    const description = match[1].replace(/\s{2,}/g, ' ').trim();
+    const amount = Number(match[2].replace(',', '.'));
+    if (description.length < 2 || !/[a-zA-Z]/.test(description)) continue;
+    if (!(amount > 0) || amount > 100000) continue;
+
+    items.push({ description, amount });
+  }
+
+  return items.slice(0, 25);
 }

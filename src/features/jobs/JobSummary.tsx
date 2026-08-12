@@ -23,16 +23,18 @@ export function JobSummary({ job }: { job: Job }) {
   const timeEntries = useLiveQuery(() => db.timeEntries.where('job_id').equals(jobId).toArray(), [jobId]);
   const materialEntries = useLiveQuery(() => db.materialEntries.where('job_id').equals(jobId).toArray(), [jobId]);
   const travelEntries = useLiveQuery(() => db.travelEntries.where('job_id').equals(jobId).toArray(), [jobId]);
+  const contractorLogs = useLiveQuery(() => db.contractorLogs.where('job_id').equals(jobId).toArray(), [jobId]);
   const kmRate = getBusinessSettings().kmRate;
 
   const totalHours = (timeEntries?.reduce((sum, e) => sum + (e.duration_minutes ?? 0), 0) ?? 0) / 60;
   const totalKm = travelEntries?.reduce((sum, e) => sum + e.distance_km, 0) ?? 0;
 
-  const { labourCost, materialsCost, travelCost, gst, totalIncGst } = computeJobActualCost(
+  const { labourCost, contractorCost, materialsCost, travelCost, gst, totalIncGst } = computeJobActualCost(
     job,
     timeEntries ?? [],
     materialEntries ?? [],
     travelEntries ?? [],
+    contractorLogs ?? [],
     kmRate,
   );
 
@@ -54,6 +56,11 @@ export function JobSummary({ job }: { job: Job }) {
             label="Travel"
             value={`${totalKm} km`}
             hint={kmRate ? `${formatCurrency(travelCost)} ex GST` : 'set $/km rate to cost this'}
+          />
+          <Stat
+            label="Contractors"
+            value={contractorCost > 0 ? formatCurrency(contractorCost) : '—'}
+            hint={contractorLogs && contractorLogs.length > 0 ? `${contractorLogs.length} on site` : undefined}
           />
         </div>
 

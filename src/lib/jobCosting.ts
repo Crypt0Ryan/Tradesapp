@@ -4,9 +4,11 @@ import type { Job } from '../models/Job';
 import type { TimeEntry } from '../models/TimeEntry';
 import type { MaterialEntry } from '../models/MaterialEntry';
 import type { TravelEntry } from '../models/TravelEntry';
+import type { ContractorLog } from '../models/ContractorLog';
 
 export interface JobActualCost {
   labourCost: number;
+  contractorCost: number;
   materialsCost: number;
   travelCost: number;
   subtotalExGst: number;
@@ -17,17 +19,24 @@ export interface JobActualCost {
 /**
  * Your own internal cost picture for a job - used for the profitability
  * report, not necessarily identical to what's on the client invoice (which
- * deliberately doesn't itemize travel as a billed line - see InvoiceView).
+ * deliberately doesn't itemize travel or contractor pay as billed lines -
+ * see InvoiceView).
  */
 export function computeJobActualCost(
   job: Job,
   timeEntries: TimeEntry[],
   materialEntries: MaterialEntry[],
   travelEntries: TravelEntry[],
+  contractorLogs: ContractorLog[],
   kmRate: number | null,
 ): JobActualCost {
   const billableMinutes = timeEntries.reduce((sum, e) => sum + (e.billable ? (e.duration_minutes ?? 0) : 0), 0);
   const labourCost = job.hourly_rate ? (billableMinutes / 60) * job.hourly_rate : 0;
+
+  const contractorCost = contractorLogs.reduce(
+    (sum, c) => sum + (c.hours !== null && c.hourly_rate !== null ? c.hours * c.hourly_rate : 0),
+    0,
+  );
 
   const materialsCost = materialEntries.reduce(
     (sum, e) => sum + materialLineTotal(e.quantity, e.unit_cost, e.markup_pct),
@@ -37,9 +46,9 @@ export function computeJobActualCost(
   const workKm = travelEntries.reduce((sum, e) => sum + (e.personal ? 0 : e.distance_km), 0);
   const travelCost = kmRate ? workKm * kmRate : 0;
 
-  const subtotalExGst = labourCost + materialsCost + travelCost;
+  const subtotalExGst = labourCost + contractorCost + materialsCost + travelCost;
   const gst = gstAmount(subtotalExGst);
   const totalIncGst = incGstAmount(subtotalExGst);
 
-  return { labourCost, materialsCost, travelCost, subtotalExGst, gst, totalIncGst };
+  return { labourCost, contractorCost, materialsCost, travelCost, subtotalExGst, gst, totalIncGst };
 }

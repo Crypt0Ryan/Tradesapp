@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createReceipt, updateReceipt } from '../../db/receiptRepository';
-import { runOcr, parseReceiptFields } from '../../lib/receiptOcr';
+import { runOcr, parseReceiptFields, parseReceiptLineItems } from '../../lib/receiptOcr';
 import { Input } from '@/components/ui/input';
 
 function readFileAsDataUrl(file: File): Promise<string> {
@@ -43,7 +43,8 @@ export function ReceiptCapture({ jobId }: { jobId: string | null }) {
     try {
       const { rawText, confidence } = await runOcr(imageUrl);
       const { vendor, date, total } = parseReceiptFields(rawText);
-      await updateReceipt(receipt.id, { vendor, date, total, ocr_confidence: confidence });
+      const lineItems = parseReceiptLineItems(rawText);
+      await updateReceipt(receipt.id, { vendor, date, total, line_items: lineItems, ocr_confidence: confidence });
     } catch {
       setOcrError('Could not read this receipt automatically - add the details by hand below.');
     } finally {

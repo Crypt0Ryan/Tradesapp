@@ -3,6 +3,7 @@ import type { Client } from '../models/Client';
 import type { ContractorLog } from '../models/ContractorLog';
 import type { Job } from '../models/Job';
 import type { MaterialEntry } from '../models/MaterialEntry';
+import type { MaterialLibraryItem } from '../models/MaterialLibraryItem';
 import type { Photo } from '../models/Photo';
 import type { Receipt } from '../models/Receipt';
 import type { TimeEntry } from '../models/TimeEntry';
@@ -14,6 +15,7 @@ export class TradesAppDB extends Dexie {
   jobs!: EntityTable<Job, 'id'>;
   timeEntries!: EntityTable<TimeEntry, 'id'>;
   materialEntries!: EntityTable<MaterialEntry, 'id'>;
+  materialLibrary!: EntityTable<MaterialLibraryItem, 'id'>;
   travelEntries!: EntityTable<TravelEntry, 'id'>;
   photos!: EntityTable<Photo, 'id'>;
   voiceNotes!: EntityTable<VoiceNote, 'id'>;
@@ -27,6 +29,18 @@ export class TradesAppDB extends Dexie {
       jobs: 'id, client_id, status, start_date',
       timeEntries: 'id, job_id, user_id, start_time, end_time',
       materialEntries: 'id, job_id, receipt_id',
+      travelEntries: 'id, job_id, user_id, date',
+      photos: 'id, job_id, taken_at',
+      voiceNotes: 'id, job_id, status, created_at',
+      receipts: 'id, job_id, status, created_at',
+      contractorLogs: 'id, job_id, date',
+    });
+    this.version(2).stores({
+      clients: 'id, user_id, name',
+      jobs: 'id, client_id, status, start_date',
+      timeEntries: 'id, job_id, user_id, start_time, end_time',
+      materialEntries: 'id, job_id, receipt_id',
+      materialLibrary: 'id, user_id, name',
       travelEntries: 'id, job_id, user_id, date',
       photos: 'id, job_id, taken_at',
       voiceNotes: 'id, job_id, status, created_at',
