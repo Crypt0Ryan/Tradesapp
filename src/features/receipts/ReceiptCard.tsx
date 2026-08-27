@@ -4,6 +4,7 @@ import { updateReceipt, assignReceiptToJob, deleteReceipt } from '../../db/recei
 import { createMaterialEntry } from '../../db/materialEntryRepository';
 import { upsertMaterialLibraryItem } from '../../db/materialLibraryRepository';
 import { formatDate } from '../../lib/date';
+import { ConfirmDeleteButton } from '@/components/ConfirmDeleteButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -93,16 +94,17 @@ export function ReceiptCard({
             {formatDate(receipt.created_at)}
             {receipt.ocr_confidence !== null && ` · OCR ${receipt.ocr_confidence.toFixed(0)}%`}
           </span>
-          <Button
-            type="button"
+          <ConfirmDeleteButton
+            onConfirm={handleDelete}
+            title="Delete this receipt?"
+            description="This will permanently remove the receipt photo and any details captured from it. This can't be undone."
             variant="ghost"
             size="icon-sm"
-            onClick={handleDelete}
             aria-label="Delete receipt"
             className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
           >
             <Trash2 className="size-3.5" />
-          </Button>
+          </ConfirmDeleteButton>
         </div>
         <div className="flex flex-wrap gap-1.5">
           <Input

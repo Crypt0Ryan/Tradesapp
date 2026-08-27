@@ -4,6 +4,7 @@ import { Images, X } from 'lucide-react';
 import { db } from '../../db/database';
 import { createPhoto, updatePhotoCaption, deletePhoto } from '../../db/photoRepository';
 import { formatDate } from '../../lib/date';
+import { ConfirmDeleteButton } from '@/components/ConfirmDeleteButton';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,16 +30,17 @@ function PhotoCard({ photo }: { photo: Photo }) {
     <figure className="flex flex-col gap-1.5 overflow-hidden rounded-lg border border-border">
       <div className="relative aspect-square bg-muted">
         <img src={photo.image_url} alt={photo.caption || 'Job photo'} className="size-full object-cover" />
-        <Button
-          type="button"
+        <ConfirmDeleteButton
+          onConfirm={() => deletePhoto(photo.id)}
+          title="Remove this photo?"
+          description="This will permanently remove the photo. This can't be undone."
           variant="destructive"
           size="icon-sm"
-          onClick={() => deletePhoto(photo.id)}
           aria-label="Remove photo"
           className="absolute top-1.5 right-1.5 bg-background/90 text-foreground hover:bg-destructive hover:text-destructive-foreground"
         >
           <X className="size-3.5" />
-        </Button>
+        </ConfirmDeleteButton>
       </div>
       <figcaption className="flex flex-col gap-1 px-2 pb-2">
         <span className="text-xs text-muted-foreground">{formatDate(photo.taken_at)}</span>

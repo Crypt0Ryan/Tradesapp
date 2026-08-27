@@ -9,6 +9,7 @@ import {
 } from '../../db/contractorLogRepository';
 import { formatDate, dateToInputValue } from '../../lib/date';
 import { formatCurrency } from '../../lib/currency';
+import { ConfirmDeleteButton } from '@/components/ConfirmDeleteButton';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -119,16 +120,17 @@ function ContractorLogRow({ entry }: { entry: ContractorLog }) {
         <Button type="button" variant="ghost" size="icon-sm" onClick={startEdit} aria-label="Edit contractor entry">
           <Pencil className="size-3.5" />
         </Button>
-        <Button
-          type="button"
+        <ConfirmDeleteButton
+          onConfirm={handleDelete}
+          title="Remove this contractor entry?"
+          description={`This will permanently remove ${entry.name}'s entry for ${formatDate(entry.date)}. This can't be undone.`}
           variant="ghost"
           size="icon-sm"
-          onClick={handleDelete}
           aria-label="Delete contractor entry"
           className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
         >
           <Trash2 className="size-3.5" />
-        </Button>
+        </ConfirmDeleteButton>
       </div>
     </li>
   );

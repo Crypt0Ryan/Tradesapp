@@ -11,6 +11,7 @@ import {
 import { gstAmount, incGstAmount } from '../../lib/gst';
 import { materialLineTotal as lineTotal } from '../../lib/materials';
 import { formatCurrency } from '../../lib/currency';
+import { ConfirmDeleteButton } from '@/components/ConfirmDeleteButton';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -99,16 +100,17 @@ function MaterialEntryRow({ entry }: { entry: MaterialEntry }) {
           <Button type="button" variant="ghost" size="icon-sm" onClick={startEdit} aria-label="Edit material">
             <Pencil className="size-3.5" />
           </Button>
-          <Button
-            type="button"
+          <ConfirmDeleteButton
+            onConfirm={handleDelete}
+            title="Delete this material?"
+            description={`This will permanently remove "${entry.name}" from this job. This can't be undone.`}
             variant="ghost"
             size="icon-sm"
-            onClick={handleDelete}
             aria-label="Delete material"
             className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
           >
             <Trash2 className="size-3.5" />
-          </Button>
+          </ConfirmDeleteButton>
         </div>
       </TableCell>
     </TableRow>

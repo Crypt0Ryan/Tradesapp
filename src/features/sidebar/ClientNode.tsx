@@ -6,6 +6,7 @@ import { updateClient, deleteClient } from '../../db/clientRepository';
 import { createJob, deleteJob } from '../../db/jobRepository';
 import { dateToInputValue } from '../../lib/date';
 import { JOB_STATUS_STYLES } from '../../lib/jobStatusStyles';
+import { ConfirmDeleteButton } from '@/components/ConfirmDeleteButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -132,16 +133,17 @@ export function ClientNode({
         >
           <Pencil className="size-3.5" />
         </Button>
-        <Button
-          type="button"
+        <ConfirmDeleteButton
+          onConfirm={handleDeleteClient}
+          title="Delete this client?"
+          description={`This will permanently remove "${client.name}". Clients with jobs still on them can't be deleted - delete or reassign those jobs first.`}
           variant="ghost"
           size="icon-sm"
-          onClick={handleDeleteClient}
           aria-label="Delete client"
           className="text-sidebar-foreground/60 hover:bg-destructive/20 hover:text-destructive"
         >
           <Trash2 className="size-3.5" />
-        </Button>
+        </ConfirmDeleteButton>
       </div>
       {clientError && <p className="px-2 text-xs text-destructive">{clientError}</p>}
 
@@ -167,16 +169,17 @@ export function ClientNode({
                 {job.status}
               </span>
             </button>
-            <Button
-              type="button"
+            <ConfirmDeleteButton
+              onConfirm={() => handleDeleteJob(job.id)}
+              title="Delete this job?"
+              description={`This will permanently delete "${job.title}" and everything logged against it - time, materials, travel, photos, voice notes, receipts, and contractors. This can't be undone.`}
               variant="ghost"
               size="icon-sm"
-              onClick={() => handleDeleteJob(job.id)}
               aria-label={`Delete ${job.title}`}
               className="shrink-0 text-sidebar-foreground/50 hover:bg-destructive/20 hover:text-destructive"
             >
               <Trash2 className="size-3.5" />
-            </Button>
+            </ConfirmDeleteButton>
           </li>
         ))}
 

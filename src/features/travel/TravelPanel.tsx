@@ -5,6 +5,7 @@ import { db } from '../../db/database';
 import { createTravelEntry, updateTravelEntry, deleteTravelEntry } from '../../db/travelEntryRepository';
 import { CURRENT_USER_ID } from '../currentUser';
 import { formatDate, dateToInputValue } from '../../lib/date';
+import { ConfirmDeleteButton } from '@/components/ConfirmDeleteButton';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,16 +75,17 @@ function TravelEntryRow({ entry }: { entry: TravelEntry }) {
         <Button type="button" variant="ghost" size="icon-sm" onClick={startEdit} aria-label="Edit trip">
           <Pencil className="size-3.5" />
         </Button>
-        <Button
-          type="button"
+        <ConfirmDeleteButton
+          onConfirm={handleDelete}
+          title="Delete this trip?"
+          description={`This will permanently remove the ${entry.distance_km}km trip on ${formatDate(entry.date)}. This can't be undone.`}
           variant="ghost"
           size="icon-sm"
-          onClick={handleDelete}
           aria-label="Delete trip"
           className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
         >
           <Trash2 className="size-3.5" />
-        </Button>
+        </ConfirmDeleteButton>
       </div>
     </li>
   );

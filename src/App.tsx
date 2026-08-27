@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Clock, TrendingUp } from 'lucide-react';
+import { Clock, TrendingUp, DatabaseBackup } from 'lucide-react';
 import { Sidebar as AppSidebar } from './features/sidebar/Sidebar';
 import { MainArea } from './features/jobs/MainArea';
 import { TimesheetView } from './features/timesheet/TimesheetView';
 import { ProfitabilityReport } from './features/profitability/ProfitabilityReport';
+import { BackupView } from './features/backup/BackupView';
 import { Button } from '@/components/ui/button';
 import { Sidebar, SidebarContent, SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 
@@ -11,6 +12,7 @@ function App() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [showTimesheet, setShowTimesheet] = useState(false);
   const [showProfitability, setShowProfitability] = useState(false);
+  const [showBackup, setShowBackup] = useState(false);
 
   if (showTimesheet) {
     return <TimesheetView onClose={() => setShowTimesheet(false)} />;
@@ -18,6 +20,10 @@ function App() {
 
   if (showProfitability) {
     return <ProfitabilityReport onClose={() => setShowProfitability(false)} />;
+  }
+
+  if (showBackup) {
+    return <BackupView onClose={() => setShowBackup(false)} />;
   }
 
   return (
@@ -51,6 +57,15 @@ function App() {
             >
               <TrendingUp className="size-4" />
               <span className="hidden sm:inline">Profitability</span>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowBackup(true)}
+              className="gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            >
+              <DatabaseBackup className="size-4" />
+              <span className="hidden sm:inline">Backup</span>
             </Button>
           </div>
         </header>

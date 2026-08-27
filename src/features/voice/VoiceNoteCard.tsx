@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { updateVoiceNote, assignVoiceNoteToJob, deleteVoiceNote } from '../../db/voiceNoteRepository';
 import { formatDate } from '../../lib/date';
-import { Button } from '@/components/ui/button';
+import { ConfirmDeleteButton } from '@/components/ConfirmDeleteButton';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { VoiceNote } from '../../models/VoiceNote';
@@ -36,16 +36,17 @@ export function VoiceNoteCard({
     <li className="flex flex-col gap-2 rounded-lg border border-border p-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground">{formatDate(note.created_at)}</span>
-        <Button
-          type="button"
+        <ConfirmDeleteButton
+          onConfirm={handleDelete}
+          title="Delete this voice note?"
+          description="This will permanently remove the recording and its transcript. This can't be undone."
           variant="ghost"
           size="icon-sm"
-          onClick={handleDelete}
           aria-label="Delete voice note"
           className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
         >
           <Trash2 className="size-3.5" />
-        </Button>
+        </ConfirmDeleteButton>
       </div>
       <audio controls src={note.audio_url} className="h-10 w-full" />
       <Textarea

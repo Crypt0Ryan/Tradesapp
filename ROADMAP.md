@@ -31,6 +31,7 @@ Goal: retention, teams, and integration into existing tradie workflows.
 - [ ] End-of-day reminder notifications ("you haven't logged hours today")
 - [ ] Weather auto-log per job/day (useful for delay disputes)
 - [ ] Digital signature capture for on-site client sign-off
+- [x] Data safety pass (2026-08-28) — the local-only architecture means there's no server copy to fall back on, so a Netlify-hosted deploy for family use (Ryan's dad included) prompted a security/durability review. Findings: the app itself is clean (no secrets, no backend, no XSS surface - device access is required to see anyone's data), but every delete anywhere in the app was instant with zero confirmation, and there was no way to back up or recover data if browser storage got cleared. Fixed both: every destructive delete (client/job/time/materials/travel/photos/voice notes/receipts/contractors) now goes through a confirm dialog first, and a "Backup" view (header button) can download a full JSON snapshot of everything and restore from one (with a clear warning + summary before it overwrites current data).
 
 ## Notes on Sequencing
 - Ship Phase 1 before touching voice/OCR — real field usage will tell you whether those features are worth their engineering cost, and in what form.
