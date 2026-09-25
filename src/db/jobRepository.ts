@@ -42,6 +42,7 @@ export function deleteJob(id: string): Promise<void> {
       db.voiceNotes,
       db.receipts,
       db.contractorLogs,
+      db.subJobs,
     ],
     async () => {
       await db.timeEntries.where('job_id').equals(id).delete();
@@ -51,6 +52,7 @@ export function deleteJob(id: string): Promise<void> {
       await db.voiceNotes.where('job_id').equals(id).delete();
       await db.receipts.where('job_id').equals(id).delete();
       await db.contractorLogs.where('job_id').equals(id).delete();
+      await db.subJobs.where('job_id').equals(id).delete();
       await db.jobs.delete(id);
     },
   );

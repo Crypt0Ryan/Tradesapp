@@ -15,6 +15,9 @@ export interface TravelEntry {
   source: TravelEntrySource;
   personal: boolean;
   date: string;
+  /** Set for a fixed daily run (km_per_day x days = distance_km); unset for a one-off trip. */
+  km_per_day?: number | null;
+  days?: number | null;
 }
 
 export type NewTravelEntry = Omit<TravelEntry, 'id'>;

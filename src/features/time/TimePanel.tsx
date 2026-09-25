@@ -9,6 +9,7 @@ import { formatDate, toDateInputValue, dateToInputValue } from '../../lib/date';
 import { gstAmount, incGstAmount } from '../../lib/gst';
 import { formatCurrency } from '../../lib/currency';
 import { ConfirmDeleteButton } from '@/components/ConfirmDeleteButton';
+import { SubJobSelect } from '@/components/SubJobSelect';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import type { TimeEntry } from '../../models/TimeEntry';
 import type { Job } from '../../models/Job';
+import type { SubJob } from '../../models/SubJob';
 
 function formatElapsed(startTime: string, nowMs: number) {
   const elapsedMs = Math.max(0, nowMs - new Date(startTime).getTime());
@@ -35,7 +37,7 @@ function recomputeTimes(dateValue: string, hoursValue: number) {
   return { start_time: start.toISOString(), end_time: end.toISOString(), duration_minutes: durationMinutes };
 }
 
-function TimeEntryRow({ entry }: { entry: TimeEntry }) {
+function TimeEntryRow({ entry, subJobs }: { entry: TimeEntry; subJobs: SubJob[] | undefined }) {
   const [notes, setNotes] = useState(entry.notes);
   const [isEditing, setIsEditing] = useState(false);
   const [date, setDate] = useState(toDateInputValue(entry.start_time));
@@ -100,6 +102,12 @@ function TimeEntryRow({ entry }: { entry: TimeEntry }) {
           <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">non-billable</span>
         )}
         <span className="text-xs text-muted-foreground italic">{entry.source}</span>
+        <SubJobSelect
+          subJobs={subJobs}
+          value={entry.sub_job_id}
+          onChange={(sub_job_id) => updateTimeEntry(entry.id, { sub_job_id })}
+          className="h-9 w-36"
+        />
         <div className="ml-auto flex gap-1">
           <Button type="button" variant="ghost" size="icon-sm" onClick={startEdit} aria-label="Edit entry">
             <Pencil className="size-3.5" />
@@ -131,6 +139,7 @@ function TimeEntryRow({ entry }: { entry: TimeEntry }) {
 export function TimePanel({ job }: { job: Job }) {
   const jobId = job.id;
   const entries = useLiveQuery(() => db.timeEntries.where('job_id').equals(jobId).toArray(), [jobId]);
+  const subJobs = useLiveQuery(() => db.subJobs.where('job_id').equals(jobId).sortBy('created_at'), [jobId]);
   const runningEntry = entries?.find((e) => e.end_time === null) ?? null;
   const loggedEntries = entries?.filter((e) => e.end_time !== null) ?? [];
 
@@ -145,6 +154,7 @@ export function TimePanel({ job }: { job: Job }) {
   const [date, setDate] = useState(() => dateToInputValue(new Date()));
   const [billable, setBillable] = useState(true);
   const [notes, setNotes] = useState('');
+  const [subJobId, setSubJobId] = useState<string | null>(null);
 
   const [rateInput, setRateInput] = useState(job.hourly_rate?.toString() ?? '');
   useEffect(() => {
@@ -176,6 +186,7 @@ export function TimePanel({ job }: { job: Job }) {
       billable,
       source: 'manual',
       notes: notes.trim(),
+      sub_job_id: subJobId,
     });
 
     setHours('');
@@ -243,6 +254,7 @@ export function TimePanel({ job }: { job: Job }) {
               <Checkbox checked={billable} onCheckedChange={(checked) => setBillable(checked === true)} />
               Billable
             </Label>
+            <SubJobSelect subJobs={subJobs} value={subJobId} onChange={setSubJobId} />
             <Button type="submit" size="sm" variant="secondary" className="ml-auto">
               Log manual time
             </Button>
@@ -257,7 +269,7 @@ export function TimePanel({ job }: { job: Job }) {
 
         <ul className="flex flex-col gap-2">
           {loggedEntries.map((entry) => (
-            <TimeEntryRow key={entry.id} entry={entry} />
+            <TimeEntryRow key={entry.id} entry={entry} subJobs={subJobs} />
           ))}
           {loggedEntries.length === 0 && <li className="text-sm text-muted-foreground">No time logged yet.</li>}
         </ul>

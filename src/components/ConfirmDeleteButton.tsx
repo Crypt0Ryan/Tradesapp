@@ -21,11 +21,14 @@ export function ConfirmDeleteButton({
   onConfirm,
   title,
   description,
+  confirmLabel = 'Delete',
   ...buttonProps
 }: {
   onConfirm: () => void | Promise<void>;
   title: string;
   description: string;
+  /** Text on the red confirm button - "Delete" unless this gates some other overwrite. */
+  confirmLabel?: string;
 } & ComponentProps<typeof Button>) {
   return (
     <AlertDialog>
@@ -43,7 +46,7 @@ export function ConfirmDeleteButton({
             onClick={() => onConfirm()}
             className="bg-destructive! text-destructive-foreground! hover:bg-destructive/90!"
           >
-            Delete
+            {confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

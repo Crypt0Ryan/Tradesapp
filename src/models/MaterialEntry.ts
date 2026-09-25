@@ -10,6 +10,8 @@ export interface MaterialEntry {
   markup_pct: number;
   source: MaterialEntrySource;
   receipt_id: string | null;
+  /** Optional section of the job this material belongs to (see SubJob). */
+  sub_job_id?: string | null;
 }
 
 export type NewMaterialEntry = Omit<MaterialEntry, 'id'>;

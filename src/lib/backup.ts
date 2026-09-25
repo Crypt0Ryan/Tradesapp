@@ -10,6 +10,7 @@ import type { Photo } from '../models/Photo';
 import type { VoiceNote } from '../models/VoiceNote';
 import type { Receipt } from '../models/Receipt';
 import type { ContractorLog } from '../models/ContractorLog';
+import type { SubJob } from '../models/SubJob';
 
 const BACKUP_FORMAT = 'tradesapp-backup';
 const BACKUP_VERSION = 1;
@@ -30,6 +31,8 @@ export interface BackupData {
     voiceNotes: VoiceNote[];
     receipts: Receipt[];
     contractorLogs: ContractorLog[];
+    /** Absent in backups made before sub-jobs existed. */
+    subJobs?: SubJob[];
   };
 }
 
@@ -44,6 +47,7 @@ export interface BackupSummary {
   voiceNotes: number;
   receipts: number;
   contractorLogs: number;
+  subJobs: number;
 }
 
 /**
@@ -53,7 +57,7 @@ export interface BackupSummary {
  * Downloads a single JSON file with every table plus business settings.
  */
 export async function exportBackup(): Promise<void> {
-  const [clients, jobs, timeEntries, materialEntries, materialLibrary, travelEntries, photos, voiceNotes, receipts, contractorLogs] =
+  const [clients, jobs, timeEntries, materialEntries, materialLibrary, travelEntries, photos, voiceNotes, receipts, contractorLogs, subJobs] =
     await Promise.all([
       db.clients.toArray(),
       db.jobs.toArray(),
@@ -65,6 +69,7 @@ export async function exportBackup(): Promise<void> {
       db.voiceNotes.toArray(),
       db.receipts.toArray(),
       db.contractorLogs.toArray(),
+      db.subJobs.toArray(),
     ]);
 
   const backup: BackupData = {
@@ -83,6 +88,7 @@ export async function exportBackup(): Promise<void> {
       voiceNotes,
       receipts,
       contractorLogs,
+      subJobs,
     },
   };
 
@@ -107,6 +113,7 @@ export function summarizeBackup(backup: BackupData): BackupSummary {
     voiceNotes: backup.tables.voiceNotes.length,
     receipts: backup.tables.receipts.length,
     contractorLogs: backup.tables.contractorLogs.length,
+    subJobs: backup.tables.subJobs?.length ?? 0,
   };
 }
 
@@ -146,6 +153,7 @@ export async function restoreBackup(backup: BackupData): Promise<void> {
       db.voiceNotes,
       db.receipts,
       db.contractorLogs,
+      db.subJobs,
     ],
     async () => {
       await Promise.all([
@@ -159,6 +167,7 @@ export async function restoreBackup(backup: BackupData): Promise<void> {
         db.voiceNotes.clear(),
         db.receipts.clear(),
         db.contractorLogs.clear(),
+        db.subJobs.clear(),
       ]);
       await Promise.all([
         db.clients.bulkAdd(t.clients ?? []),
@@ -171,6 +180,7 @@ export async function restoreBackup(backup: BackupData): Promise<void> {
         db.voiceNotes.bulkAdd(t.voiceNotes ?? []),
         db.receipts.bulkAdd(t.receipts ?? []),
         db.contractorLogs.bulkAdd(t.contractorLogs ?? []),
+        db.subJobs.bulkAdd(t.subJobs ?? []),
       ]);
     },
   );

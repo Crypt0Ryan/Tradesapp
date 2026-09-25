@@ -10,6 +10,8 @@ export interface TimeEntry {
   billable: boolean;
   source: TimeEntrySource;
   notes: string;
+  /** Optional section of the job this time belongs to (see SubJob). */
+  sub_job_id?: string | null;
 }
 
 export type NewTimeEntry = Omit<TimeEntry, 'id'>;

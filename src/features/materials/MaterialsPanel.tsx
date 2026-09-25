@@ -12,14 +12,16 @@ import { gstAmount, incGstAmount } from '../../lib/gst';
 import { materialLineTotal as lineTotal } from '../../lib/materials';
 import { formatCurrency } from '../../lib/currency';
 import { ConfirmDeleteButton } from '@/components/ConfirmDeleteButton';
+import { SubJobSelect } from '@/components/SubJobSelect';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import type { MaterialEntry } from '../../models/MaterialEntry';
+import type { SubJob } from '../../models/SubJob';
 
-function MaterialEntryRow({ entry }: { entry: MaterialEntry }) {
+function MaterialEntryRow({ entry, subJobs }: { entry: MaterialEntry; subJobs: SubJob[] | undefined }) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(entry.name);
   const [quantity, setQuantity] = useState(String(entry.quantity));
@@ -55,7 +57,15 @@ function MaterialEntryRow({ entry }: { entry: MaterialEntry }) {
     return (
       <TableRow>
         <TableCell>
-          <Input value={name} onChange={(e) => setName(e.target.value)} className="min-w-32" />
+          <div className="flex flex-col gap-1.5">
+            <Input value={name} onChange={(e) => setName(e.target.value)} className="min-w-32" />
+            <SubJobSelect
+              subJobs={subJobs}
+              value={entry.sub_job_id}
+              onChange={(sub_job_id) => updateMaterialEntry(entry.id, { sub_job_id })}
+              className="h-9 w-full"
+            />
+          </div>
         </TableCell>
         <TableCell className="flex gap-1.5">
           <Input type="number" min="0" step="any" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="w-16" />
@@ -86,7 +96,17 @@ function MaterialEntryRow({ entry }: { entry: MaterialEntry }) {
 
   return (
     <TableRow>
-      <TableCell className="font-medium text-foreground">{entry.name}</TableCell>
+      <TableCell className="font-medium text-foreground">
+        <div className="flex flex-col gap-1.5">
+          {entry.name}
+          <SubJobSelect
+            subJobs={subJobs}
+            value={entry.sub_job_id}
+            onChange={(sub_job_id) => updateMaterialEntry(entry.id, { sub_job_id })}
+            className="h-9 w-full max-w-40 font-normal"
+          />
+        </div>
+      </TableCell>
       <TableCell className="text-muted-foreground">
         {entry.quantity} {entry.unit}
       </TableCell>
@@ -120,6 +140,7 @@ function MaterialEntryRow({ entry }: { entry: MaterialEntry }) {
 export function MaterialsPanel({ jobId }: { jobId: string }) {
   const entries = useLiveQuery(() => db.materialEntries.where('job_id').equals(jobId).toArray(), [jobId]);
   const library = useLiveQuery(() => listMaterialLibrary(), []);
+  const subJobs = useLiveQuery(() => db.subJobs.where('job_id').equals(jobId).sortBy('created_at'), [jobId]);
 
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('1');
@@ -127,6 +148,7 @@ export function MaterialsPanel({ jobId }: { jobId: string }) {
   const [unitCost, setUnitCost] = useState('');
   const [markupPct, setMarkupPct] = useState('0');
   const [showLibrary, setShowLibrary] = useState(false);
+  const [subJobId, setSubJobId] = useState<string | null>(null);
 
   function handleNameBlur() {
     // Don't clobber fields the user's already filled in by hand.
@@ -155,6 +177,7 @@ export function MaterialsPanel({ jobId }: { jobId: string }) {
       markup_pct: Number(markupPct) || 0,
       source: 'manual',
       receipt_id: null,
+      sub_job_id: subJobId,
     });
     await upsertMaterialLibraryItem({ name: trimmedName, unit: trimmedUnit, unit_cost: cost });
 
@@ -224,6 +247,7 @@ export function MaterialsPanel({ jobId }: { jobId: string }) {
             onChange={(e) => setMarkupPct(e.target.value)}
             className="w-24"
           />
+          <SubJobSelect subJobs={subJobs} value={subJobId} onChange={setSubJobId} />
           <Button type="submit" size="sm" variant="secondary" className="gap-1.5">
             <Plus className="size-4" />
             Add
@@ -279,7 +303,7 @@ export function MaterialsPanel({ jobId }: { jobId: string }) {
             </TableHeader>
             <TableBody>
               {entries.map((entry) => (
-                <MaterialEntryRow key={entry.id} entry={entry} />
+                <MaterialEntryRow key={entry.id} entry={entry} subJobs={subJobs} />
               ))}
             </TableBody>
           </Table>

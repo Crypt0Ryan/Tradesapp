@@ -16,7 +16,7 @@ export function MainArea({
 
   if (!selectedJobId) {
     return (
-      <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
         <VoiceInboxPanel />
         <ReceiptInboxPanel />
       </div>
@@ -28,7 +28,7 @@ export function MainArea({
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
       <JobDetail job={job} clientName={client?.name ?? 'Unknown client'} onClose={onCloseJob} />
     </div>
   );

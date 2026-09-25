@@ -33,7 +33,7 @@ function App() {
           <AppSidebar selectedJobId={selectedJobId} onSelectJob={setSelectedJobId} />
         </SidebarContent>
       </Sidebar>
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-2 border-b border-sidebar-border bg-sidebar px-4 py-2">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground" />

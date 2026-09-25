@@ -11,6 +11,7 @@ import { PhotosPanel } from '../photos/PhotosPanel';
 import { VoiceNotesPanel } from '../voice/VoiceNotesPanel';
 import { ReceiptsPanel } from '../receipts/ReceiptsPanel';
 import { ContractorsPanel } from '../contractors/ContractorsPanel';
+import { SubJobsPanel } from '../subjobs/SubJobsPanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -115,6 +116,7 @@ export function JobDetail({ job, clientName, onClose }: { job: Job; clientName: 
       </div>
 
       <JobSummary job={job} />
+      <SubJobsPanel jobId={job.id} />
       <TimePanel job={job} />
       <ContractorsPanel jobId={job.id} />
       <MaterialsPanel jobId={job.id} />

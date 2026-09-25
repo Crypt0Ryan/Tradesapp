@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { createReceipt, updateReceipt } from '../../db/receiptRepository';
-import { runOcr, parseReceiptFields, parseReceiptLineItems } from '../../lib/receiptOcr';
+import { createReceipt } from '../../db/receiptRepository';
+import { scanReceipt } from './scanReceipt';
 import { Input } from '@/components/ui/input';
 
 function readFileAsDataUrl(file: File): Promise<string> {
@@ -41,10 +41,7 @@ export function ReceiptCapture({ jobId }: { jobId: string | null }) {
 
     setIsOcrRunning(true);
     try {
-      const { rawText, confidence } = await runOcr(imageUrl);
-      const { vendor, date, total } = parseReceiptFields(rawText);
-      const lineItems = parseReceiptLineItems(rawText);
-      await updateReceipt(receipt.id, { vendor, date, total, line_items: lineItems, ocr_confidence: confidence });
+      await scanReceipt(receipt.id, imageUrl);
     } catch {
       setOcrError('Could not read this receipt automatically - add the details by hand below.');
     } finally {
@@ -55,6 +52,10 @@ export function ReceiptCapture({ jobId }: { jobId: string | null }) {
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border p-3">
       <Input type="file" accept="image/*" capture="environment" onChange={handleFileSelected} />
+      <p className="text-xs text-muted-foreground">
+        For the best scan: lay the receipt flat, in good light with no shadow across it, and fill the frame. Whatever gets
+        read is a guess - always check the numbers.
+      </p>
       {isOcrRunning && <p className="text-sm text-muted-foreground">Reading receipt…</p>}
       {ocrError && <p className="text-sm text-destructive">{ocrError}</p>}
     </div>
